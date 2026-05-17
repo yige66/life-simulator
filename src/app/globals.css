@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sakura-pink: #FFB7C5;
+  --sakura-deep: #FF8FA3;
+  --night-purple: #1A0B2E;
+  --deep-purple: #2E073F;
+  --moonlight-white: #F5F5F7;
+  --aurora-green: #A7F3D0;
+  --aurora-glow: #34D399;
+  
+  /* Layout tokens */
+  --glass-bg: rgba(26, 11, 46, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --sakura-glow: rgba(255, 183, 197, 0.4);
+  
+  /* Parchment Theme */
+  --parchment-base: #f4e4bc;
+  --parchment-dark: #e2d1a4;
+  --parchment-text: #4a3728;
+  --leather-brown: #3d1f14;
+}
+
+body {
+  color: var(--moonlight-white);
+  background: radial-gradient(circle at center, var(--deep-purple) 0%, var(--night-purple) 100%);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  font-family: var(--font-m-plus-rounded), sans-serif;
+}
+
+@layer components {
+  /* Modern Glass Panel */
+  .glass-panel {
+    @apply bg-night/70 backdrop-blur-2xl border border-white/10 rounded-3xl;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  }
+
+  /* Refined Classical Frame - Book Style */
+  .classical-frame {
+    @apply relative p-8 glass-panel overflow-visible shadow-[0_30px_70px_rgba(0,0,0,0.6)];
+    border: 3px solid #3d1f14;
+    background: 
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 80%),
+      linear-gradient(135deg, #ecd69a 0%, #c8ad6d 100%);
+    color: #1a0f0a;
+    box-shadow: 
+      0 20px 50px rgba(0,0,0,0.5),
+      inset 0 0 40px rgba(61, 31, 20, 0.1);
+  }
+
+  /* Complex Ornaments - High density Victorian pattern with lower repetition feel */
+  .ornament-bg {
+    @apply absolute inset-0 pointer-events-none opacity-[0.12] z-0;
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd' stroke='%233d1f14' stroke-width='0.6' stroke-opacity='0.6'%3E%3Cpath d='M60 60c10-20 30-20 40 0M60 60c-10-20-30-20-40 0M60 60c20 10 20 30 0 40M60 60c20-10 20-30 0-40'/%3E%3Ccircle cx='60' cy='60' r='5'/%3E%3Cpath d='M0 0c10 20 30 20 40 0M120 0c-10 20-30 20-40 0M0 120c10-20 30-20 40 0M120 120c-10-20-30-20-40 0'/%3E%3Cpath d='M30 30a15 15 0 1 0 30 0 15 15 0 1 0-30 0M90 30a15 15 0 1 0 30 0 15 15 0 1 0-30 0M30 90a15 15 0 1 0 30 0 15 15 0 1 0-30 0M90 90a15 15 0 1 0 30 0 15 15 0 1 0-30 0'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 120px 120px;
+  }
+
+  /* Grimoire Spine Effect - Adjusted for more space */
+  .grimoire-spine {
+    @apply absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-4 z-20 pointer-events-none;
+    background: linear-gradient(90deg, 
+      rgba(0,0,0,0.05) 0%, 
+      rgba(0,0,0,0.15) 50%, 
+      rgba(0,0,0,0.05) 100% 
+    );
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+  }
+
+  /* Decorative Corner - More Ornate with multiple layers */
+.frame-corner {
+  @apply absolute w-16 h-16 pointer-events-none z-30;
+  border-width: 3px;
+  border-color: #3d1f14;
+  filter: drop-shadow(0 0 10px rgba(61, 31, 20, 0.4));
+}
+
+  .frame-corner-tl {
+    @apply -top-1 -left-1 rounded-tl-xl border-r-0 border-b-0;
+  }
+
+  .frame-corner-tr {
+    @apply -top-1 -right-1 rounded-tr-xl border-l-0 border-b-0;
+  }
+
+  .frame-corner-bl {
+    @apply -bottom-1 -left-1 rounded-bl-xl border-r-0 border-t-0;
+  }
+
+  .frame-corner-br {
+    @apply -bottom-1 -right-1 rounded-br-xl border-l-0 border-t-0;
+  }
+
+  /* Modern Action Button */
+  .aurora-button {
+    @apply relative px-8 py-4 bg-white/5 border border-white/10 text-white font-bold 
+           transition-all duration-300 overflow-hidden rounded-2xl hover:bg-white/10
+           flex items-center justify-center gap-3;
+  }
+
+  .aurora-button::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent
+           -translate-x-full transition-transform duration-1000 ease-in-out;
+  }
+
+  .aurora-button:hover::before {
+    @apply translate-x-full;
+  }
+
+  .aurora-button:hover {
+    @apply border-emerald-300/50;
+    box-shadow: 0 0 20px rgba(167, 243, 208, 0.2);
+  }
+
+  /* Main Sakura Button */
+  .sakura-button {
+    @apply relative overflow-hidden px-10 py-4 rounded-full font-black transition-all duration-300 text-[#f4e4bc] text-xl
+           tracking-[0.1em] flex items-center justify-center gap-3 border-2 border-amber-900/20;
+    background: linear-gradient(90deg, #1a0f0a 0%, #3d1f14 100%);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .sakura-button:hover {
+    @apply -translate-y-1 scale-105;
+    box-shadow: 0 15px 40px rgba(61, 31, 20, 0.5);
+  }
+
+  .sakura-button:active {
+    @apply scale-95 translate-y-0;
+  }
+
+  /* Stat Card - Deepened contrast */
+  .stat-card {
+    @apply bg-black/[0.06] border border-black/[0.15] p-4 rounded-2xl transition-all duration-300 shadow-inner;
+  }
+  .stat-card:hover {
+    @apply bg-black/[0.1] border-[#3d1f14]/40 -translate-y-1 shadow-md;
+  }
+
+  /* Typography Utilities */
+  .text-glow-sakura {
+    text-shadow: 0 0 10px var(--sakura-glow);
+  }
+  
+  .text-glow-aurora {
+    text-shadow: 0 0 10px rgba(167, 243, 208, 0.6);
+  }
+
+  /* Utility for Magic Circle Background */
+  .bg-radial-glow {
+    background: radial-gradient(circle at center, var(--sakura-pink) 0%, transparent 70%);
+  }
+}
+
+@keyframes magic-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.magic-floating {
+  animation: magic-float 6s ease-in-out infinite;
+}
+
+@keyframes magic-rotate-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes magic-rotate-ccw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes magic-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.magic-rotate-cw-1 {
+  transform-origin: 100px 100px;
+  transform-box: view-box;
+  animation: magic-rotate-cw 48s linear infinite;
+}
+
+.magic-rotate-ccw-2 {
+  transform-origin: 100px 100px;
+  transform-box: view-box;
+  animation: magic-rotate-ccw 28s linear infinite;
+}
+
+.magic-rotate-cw-3 {
+  transform-origin: 100px 100px;
+  transform-box: view-box;
+  animation: magic-rotate-cw 18s linear infinite;
+}
+
+.magic-rotate-cw-3-pulse {
+  transform-origin: 100px 100px;
+  transform-box: view-box;
+  animation: magic-rotate-cw 18s linear infinite, magic-pulse 2.6s ease-in-out infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--night-purple);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--deep-purple);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sakura-pink);
+}
+

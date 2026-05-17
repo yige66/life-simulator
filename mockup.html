@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Simulator Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background: linear-gradient(135deg, #1A0B2E 0%, #2E073F 100%);
+            color: #F5F5F7;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 183, 197, 0.3);
+            border-radius: 20px;
+        }
+        .sakura-btn {
+            background: linear-gradient(90deg, #FFB7C5 0%, #FF8FA3 100%);
+            box-shadow: 0 0 15px rgba(255, 183, 197, 0.4);
+            transition: all 0.3s ease;
+        }
+        .sakura-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 183, 197, 0.6);
+        }
+        .dialog-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgba(255, 255, 255, 0.1);
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-8">
+    <div id="stars"></div>
+
+    <!-- UI Mockup -->
+    <div class="w-full max-w-4xl h-[600px] flex flex-col relative">
+        <!-- Stats Panel -->
+        <div class="absolute top-4 left-4 glass p-4 w-48 space-y-2">
+            <div class="text-xs text-pink-200">角色状态</div>
+            <div class="space-y-1">
+                <div class="flex justify-between text-sm"><span>智力</span><span class="text-pink-300">★★★★☆</span></div>
+                <div class="flex justify-between text-sm"><span>魅力</span><span class="text-pink-300">★★★☆☆</span></div>
+                <div class="flex justify-between text-sm"><span>体力</span><span class="text-pink-300">★★★★★</span></div>
+                <div class="flex justify-between text-sm"><span>运气</span><span class="text-pink-300">★★★☆☆</span></div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="flex-1 flex flex-col items-center justify-center space-y-8">
+            <div class="text-center">
+                <h1 class="text-2xl font-bold mb-2 text-pink-100">序章：深海来的转校生</h1>
+                <p class="text-sm opacity-60 italic">当前场景：圣玛利亚学院礼堂</p>
+            </div>
+
+            <!-- Dialog Bubble -->
+            <div class="glass dialog-bubble p-8 max-w-2xl relative text-lg leading-relaxed text-center">
+                “既然你是新来的，那就请在大家面前介绍一下你自己吧。” 老师微笑着看向你，台下的同学们正窃窃私语。
+            </div>
+
+            <!-- Options -->
+            <div class="flex flex-col space-y-4 w-64">
+                <button class="sakura-btn py-3 px-6 rounded-full text-white font-medium">从容地走上讲台</button>
+                <button class="sakura-btn py-3 px-6 rounded-full text-white font-medium">试图蒙混过关</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 50; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+            starsContainer.appendChild(star);
+        }
+    </script>
+</body>
+</html>
