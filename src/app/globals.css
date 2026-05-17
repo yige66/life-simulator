@@ -12,12 +12,10 @@
   --aurora-green: #A7F3D0;
   --aurora-glow: #34D399;
   
-  /* Layout tokens */
   --glass-bg: rgba(26, 11, 46, 0.7);
   --glass-border: rgba(255, 255, 255, 0.1);
   --sakura-glow: rgba(255, 183, 197, 0.4);
   
-  /* Parchment Theme */
   --parchment-base: #f4e4bc;
   --parchment-dark: #e2d1a4;
   --parchment-text: #4a3728;
@@ -34,13 +32,11 @@ body {
 }
 
 @layer components {
-  /* Modern Glass Panel */
   .glass-panel {
     @apply bg-night/70 backdrop-blur-2xl border border-white/10 rounded-3xl;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
   }
 
-  /* Refined Classical Frame - Book Style */
   .classical-frame {
     @apply relative p-8 glass-panel overflow-visible shadow-[0_30px_70px_rgba(0,0,0,0.6)];
     border: 3px solid #3d1f14;
@@ -53,14 +49,27 @@ body {
       inset 0 0 40px rgba(61, 31, 20, 0.1);
   }
 
-  /* Complex Ornaments - High density Victorian pattern with lower repetition feel */
+  /* Special Event Golden Frame */
+  .special-event-frame {
+    @apply relative p-8 glass-panel overflow-visible;
+    border: 3px solid #b8860b;
+    background: 
+      radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.08) 0%, transparent 70%),
+      linear-gradient(135deg, #1a0f0a 0%, #3d1f14 50%, #4a2800 100%);
+    color: #f5deb3;
+    box-shadow: 
+      0 20px 60px rgba(184, 134, 11, 0.3),
+      inset 0 0 50px rgba(255, 215, 0, 0.04),
+      0 0 80px rgba(255, 215, 0, 0.1);
+    animation: golden-glow 3s ease-in-out infinite alternate;
+  }
+
   .ornament-bg {
     @apply absolute inset-0 pointer-events-none opacity-[0.12] z-0;
     background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd' stroke='%233d1f14' stroke-width='0.6' stroke-opacity='0.6'%3E%3Cpath d='M60 60c10-20 30-20 40 0M60 60c-10-20-30-20-40 0M60 60c20 10 20 30 0 40M60 60c20-10 20-30 0-40'/%3E%3Ccircle cx='60' cy='60' r='5'/%3E%3Cpath d='M0 0c10 20 30 20 40 0M120 0c-10 20-30 20-40 0M0 120c10-20 30-20 40 0M120 120c-10-20-30-20-40 0'/%3E%3Cpath d='M30 30a15 15 0 1 0 30 0 15 15 0 1 0-30 0M90 30a15 15 0 1 0 30 0 15 15 0 1 0-30 0M30 90a15 15 0 1 0 30 0 15 15 0 1 0-30 0M90 90a15 15 0 1 0 30 0 15 15 0 1 0-30 0'/%3E%3C/g%3E%3C/svg%3E");
     background-size: 120px 120px;
   }
 
-  /* Grimoire Spine Effect - Adjusted for more space */
   .grimoire-spine {
     @apply absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-4 z-20 pointer-events-none;
     background: linear-gradient(90deg, 
@@ -71,13 +80,12 @@ body {
     box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
   }
 
-  /* Decorative Corner - More Ornate with multiple layers */
-.frame-corner {
-  @apply absolute w-16 h-16 pointer-events-none z-30;
-  border-width: 3px;
-  border-color: #3d1f14;
-  filter: drop-shadow(0 0 10px rgba(61, 31, 20, 0.4));
-}
+  .frame-corner {
+    @apply absolute w-16 h-16 pointer-events-none z-30;
+    border-width: 3px;
+    border-color: #3d1f14;
+    filter: drop-shadow(0 0 10px rgba(61, 31, 20, 0.4));
+  }
 
   .frame-corner-tl {
     @apply -top-1 -left-1 rounded-tl-xl border-r-0 border-b-0;
@@ -95,7 +103,6 @@ body {
     @apply -bottom-1 -right-1 rounded-br-xl border-l-0 border-t-0;
   }
 
-  /* Modern Action Button */
   .aurora-button {
     @apply relative px-8 py-4 bg-white/5 border border-white/10 text-white font-bold 
            transition-all duration-300 overflow-hidden rounded-2xl hover:bg-white/10
@@ -117,7 +124,31 @@ body {
     box-shadow: 0 0 20px rgba(167, 243, 208, 0.2);
   }
 
-  /* Main Sakura Button */
+  /* Golden Button for Special Events */
+  .golden-button {
+    @apply relative px-8 py-4 font-bold transition-all duration-300 overflow-hidden rounded-2xl
+           flex items-center justify-center gap-3;
+    background: linear-gradient(135deg, rgba(184,134,11,0.2) 0%, rgba(218,165,32,0.1) 50%, rgba(184,134,11,0.2) 100%);
+    border: 1px solid rgba(218,165,32,0.3);
+    color: #f5deb3;
+  }
+
+  .golden-button::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent
+           -translate-x-full transition-transform duration-1000 ease-in-out;
+  }
+
+  .golden-button:hover::before {
+    @apply translate-x-full;
+  }
+
+  .golden-button:hover {
+    border-color: rgba(255,215,0,0.5);
+    box-shadow: 0 0 25px rgba(255,215,0,0.2);
+    background: linear-gradient(135deg, rgba(184,134,11,0.35) 0%, rgba(218,165,32,0.2) 50%, rgba(184,134,11,0.35) 100%);
+  }
+
   .sakura-button {
     @apply relative overflow-hidden px-10 py-4 rounded-full font-black transition-all duration-300 text-[#f4e4bc] text-xl
            tracking-[0.1em] flex items-center justify-center gap-3 border-2 border-amber-900/20;
@@ -134,7 +165,6 @@ body {
     @apply scale-95 translate-y-0;
   }
 
-  /* Stat Card - Deepened contrast */
   .stat-card {
     @apply bg-black/[0.06] border border-black/[0.15] p-4 rounded-2xl transition-all duration-300 shadow-inner;
   }
@@ -142,7 +172,6 @@ body {
     @apply bg-black/[0.1] border-[#3d1f14]/40 -translate-y-1 shadow-md;
   }
 
-  /* Typography Utilities */
   .text-glow-sakura {
     text-shadow: 0 0 10px var(--sakura-glow);
   }
@@ -151,24 +180,28 @@ body {
     text-shadow: 0 0 10px rgba(167, 243, 208, 0.6);
   }
 
-  /* Utility for Magic Circle Background */
+  .text-glow-gold {
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.4), 0 0 25px rgba(218, 165, 32, 0.2);
+  }
+
   .bg-radial-glow {
     background: radial-gradient(circle at center, var(--sakura-pink) 0%, transparent 70%);
   }
 
-  /* Mobile Responsive Overrides */
+  /* Mobile: hide frame corners (the black borders) */
   @media (max-width: 640px) {
     .classical-frame {
       @apply p-5;
       border-width: 2px;
     }
     .frame-corner {
-      @apply w-10 h-10;
+      display: none;
+    }
+    .special-event-frame {
       border-width: 2px;
     }
   }
 
-  /* Consequence stat badge animations */
   .stat-badge-up {
     animation: stat-pop 0.4s ease-out;
   }
@@ -181,6 +214,11 @@ body {
   0% { transform: scale(0.5); opacity: 0; }
   70% { transform: scale(1.15); }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes golden-glow {
+  0% { box-shadow: 0 20px 60px rgba(184, 134, 11, 0.15), inset 0 0 40px rgba(255, 215, 0, 0.02), 0 0 60px rgba(255, 215, 0, 0.05); }
+  100% { box-shadow: 0 20px 80px rgba(184, 134, 11, 0.35), inset 0 0 60px rgba(255, 215, 0, 0.06), 0 0 100px rgba(255, 215, 0, 0.15); }
 }
 
 @keyframes magic-float {
@@ -231,7 +269,6 @@ body {
   animation: magic-rotate-cw 18s linear infinite, magic-pulse 2.6s ease-in-out infinite;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -245,4 +282,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--sakura-pink);
 }
-
