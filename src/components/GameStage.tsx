@@ -25,6 +25,7 @@ interface EventData {
   actionEffects?: Partial<Stats>;
   consequence?: string;
   isSpecial?: boolean;
+  chapterEnd?: boolean;
 }
 
 interface Props {
@@ -62,6 +63,7 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const [isSpecialEvent, setIsSpecialEvent] = useState(false);
   const statsRef = useRef(character.stats);
   const historyRef = useRef<string[]>([]);
+  const chapterEndRef = useRef(false);
 
   useEffect(() => { statsRef.current = character.stats; }, [character.stats]);
   useEffect(() => { historyRef.current = history; }, [history]);
@@ -127,8 +129,10 @@ ${scaleHint}
   "event": "对玩家动作的世界回应（80-120字），描述动作导致的结果和当前场面",
   "options": [{"text": "选项", "effects": {"智力": 1}, "consequence": "选择该项的结果简述"}],
   "actionEffects": {"智力": -2},
-  "consequence": "动作的后果简述（40-60字），说明属性为何变化"
-}`;
+  "consequence": "动作的后果简述（40-60字），说明属性为何变化",
+  "chapterEnd": false
+}
+（chapterEnd为true仅当此动作构成了人生阶段的重大转折——如告别旧地、踏入新世界、身份巨变）`;
     }
     
     return `你是日式轻小说风格游戏引擎。每个章节代表角色人生的一个阶段，阶段内事件之间时间连续、情节紧密关联（如同一天/同一周发生的事）。跨阶段之间可以跳过数月甚至数年。
@@ -155,8 +159,11 @@ ${scaleHint}
   "event": "事件描述（80-120字）",
   "options": [{"text": "选项", "effects": {"智力": 1}, "consequence": "选择该项的结果简述"}],
   "actionEffects": {"智力": -2},
-  "consequence": "选择后的直接后果（40-60字），解释属性为何变化"
-}`;
+  "consequence": "选择后的直接后果（40-60字），解释属性为何变化",
+  "chapterEnd": false
+}
+
+chapterEnd说明：如果这个事件构成了人生阶段的重大转折（如告别旧地、踏入新世界、身份巨变、完成重大使命），则设为true；普通日常事件为false。当前是本阶段的第${eventCount + 1}个事件，如果是第2个之前则不要急着结束，如果是第6个则建议true。`;
   };
 
   const ensureFallbackStart = () => {
@@ -178,7 +185,7 @@ ${scaleHint}
       setLoading(true);
       try {
         const raw = await fetchDeepseek([
-          { role: 'system', content: `你是轻小说作家。根据玩家信息生成3-4个"人生阶段"标题（如"初入异世界"、"冒险者成名录"、"王都风云"）。每个标题代表角色人生的一个阶段，阶段之间可以有数月到数年的时间跨度。标题必须呼应世界观和角色身份，按人生进程递进。返回JSON：{"chapters": ["标题1", "标题2"]}` },
+          { role: 'system', content: `你是轻小说作家。根据玩家信息生成3-5个"人生阶段"标题（如"初入异世界"、"冒险者成名录"、"王都风云"）。每个标题代表角色人生的一个阶段，阶段之间可以有数月到数年的时间跨度。标题必须呼应世界观和角色身份，按人生进程递进。返回JSON：{"chapters": ["标题1", "标题2"]}` },
           { role: 'user', content: `名字：${character.name}，背景：${character.background}，世界观：${character.worldview}` },
         ]);
         const parsed = safeParseJsonFromModel(raw);
@@ -236,6 +243,7 @@ ${recentHistory || '（游戏开始）'}
         parsed && typeof parsed.event === 'string' && Array.isArray(parsed.options) ? { ...parsed, isSpecial } : null;
 
       if (!nextEvent) {
+        chapterEndRef.current = false;
         setCurrentEvent({
           event: userAction
             ? `你尝试了「${userAction}」，空气里传来微不可闻的回响。`
@@ -272,6 +280,7 @@ ${recentHistory || '（游戏开始）'}
           isSpecial,
         });
       }
+      chapterEndRef.current = nextEvent?.chapterEnd === true;
       if (userAction) setShowConsequence(true);
       setEventCount(prev => prev + 1);
     } catch (err) {
@@ -319,14 +328,16 @@ ${recentHistory || '（游戏开始）'}
   };
 
   const checkProgression = (statsOverride?: Stats, historyOverride?: string[]) => {
-    if (eventCount >= 4) {
-      if (currentChapterIndex < chapters.length - 1) {
-        setCurrentChapterIndex(prev => prev + 1);
-        setEventCount(0);
-        generateEvent(chapters[currentChapterIndex + 1], { stats: statsOverride, history: historyOverride });
-      } else {
-        onGameEnd((historyOverride ?? historyRef.current).join('\n'), statsOverride ?? statsRef.current);
-      }
+    const shouldAdvance = chapterEndRef.current || eventCount >= 6;
+    if (eventCount >= 2 && shouldAdvance && currentChapterIndex < chapters.length - 1) {
+      setCurrentChapterIndex(prev => prev + 1);
+      setEventCount(0);
+      chapterEndRef.current = false;
+      generateEvent(chapters[currentChapterIndex + 1], { stats: statsOverride, history: historyOverride });
+    } else if (eventCount >= 6 && currentChapterIndex >= chapters.length - 1) {
+      onGameEnd((historyOverride ?? historyRef.current).join('\n'), statsOverride ?? statsRef.current);
+    } else if (shouldAdvance && currentChapterIndex >= chapters.length - 1) {
+      onGameEnd((historyOverride ?? historyRef.current).join('\n'), statsOverride ?? statsRef.current);
     } else {
       generateEvent(chapters[currentChapterIndex], { stats: statsOverride, history: historyOverride });
     }
@@ -490,7 +501,7 @@ ${recentHistory || '（游戏开始）'}
                   {currentEvent.event}
                 </p>
                 <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 sm:px-6 py-1 border rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-black ${isSpecialEvent ? 'bg-amber-900/80 border-amber-500/40 text-amber-300/60' : 'bg-night border-pink-500/30 text-pink-300/70'}`}>
-                  Event {eventCount} / 4
+                  Event {eventCount + 1}
                 </div>
               </div>
 
