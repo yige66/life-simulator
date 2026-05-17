@@ -108,30 +108,30 @@ export default function Home() {
             key="ending"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-4xl z-10"
+            className="w-full max-w-4xl z-10 px-2 sm:px-0"
           >
-            <div className="classical-frame p-12 text-center space-y-10">
+            <div className="classical-frame p-6 sm:p-8 md:p-12 text-center space-y-6 sm:space-y-10">
               <div className="frame-corner frame-corner-tl" />
               <div className="frame-corner frame-corner-tr" />
               <div className="frame-corner frame-corner-bl" />
               <div className="frame-corner frame-corner-br" />
-              <div className="space-y-4 relative z-10">
-                <h2 className="text-4xl font-black text-pink-200 text-glow-sakura flex items-center justify-center gap-4">
-                  <Sparkles className="w-8 h-8" />
+              <div className="space-y-3 sm:space-y-4 relative z-10">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-pink-200 text-glow-sakura flex items-center justify-center gap-2 sm:gap-4">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                   物语终焉
-                  <Sparkles className="w-8 h-8" />
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                 </h2>
-                <div className="h-px w-24 bg-pink-500/30 mx-auto" />
+                <div className="h-px w-16 sm:w-24 bg-pink-500/30 mx-auto" />
               </div>
               
-              <div className="min-h-[200px] flex items-center justify-center">
+              <div className="min-h-[150px] sm:min-h-[200px] flex items-center justify-center">
                 {loadingEnding ? (
-                  <div className="flex flex-col items-center gap-6">
-                    <RefreshCw className="w-10 h-10 text-pink-400 animate-spin" />
-                    <p className="text-pink-100/50 animate-pulse tracking-widest">正在编织传奇的终章...</p>
+                  <div className="flex flex-col items-center gap-4 sm:gap-6">
+                    <RefreshCw className="w-8 h-8 sm:w-10 sm:h-10 text-pink-400 animate-spin" />
+                    <p className="text-pink-100/50 animate-pulse tracking-widest text-sm sm:text-base">正在编织传奇的终章...</p>
                   </div>
                 ) : (
-                  <p className="text-2xl leading-relaxed text-pink-50 italic font-medium">
+                  <p className="text-lg sm:text-xl md:text-2xl leading-relaxed text-pink-50 italic font-medium">
                     {endingText}
                   </p>
                 )}
@@ -139,7 +139,7 @@ export default function Home() {
 
               <button
                 onClick={() => window.location.reload()}
-                className="sakura-button mx-auto"
+                className="sakura-button mx-auto text-base sm:text-xl"
               >
                 再次踏上旅程
               </button>
