@@ -383,6 +383,7 @@ ${recentHistory || '（游戏开始）'}
         )}
       </AnimatePresence>
 
+      {!showConsequence && (
       <div className="w-full mb-6 sm:mb-8 md:mb-12 pr-0 lg:pr-24">
         <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-6">
           <motion.div key={chapters[currentChapterIndex]} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
@@ -403,10 +404,47 @@ ${recentHistory || '（游戏开始）'}
           </div>
         </div>
       </div>
+      )}
 
       <div className="w-full max-w-4xl flex-1 flex flex-col justify-center">
         <AnimatePresence mode="wait">
-          {loading && !showConsequence ? (
+          {showConsequence ? (
+            <motion.div key="consequence" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }}
+              className="flex flex-col items-center justify-center py-12 sm:py-16 md:py-20">
+              <div className={isSpecialEvent ? 'special-event-frame p-8 sm:p-10 md:p-14 text-center relative' : 'classical-frame p-8 sm:p-10 md:p-14 text-center relative'}>
+                {!isSpecialEvent && <><div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" /><div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" /></>}
+                <div className="ornament-bg" />
+                <div className="relative z-10 space-y-6 sm:space-y-8">
+                  <div className="flex items-center justify-center gap-2 sm:gap-3">
+                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />}
+                    <span className={`text-sm sm:text-base font-black uppercase tracking-[0.3em] ${isSpecialEvent ? 'text-amber-300/70' : 'text-pink-300/60'}`}>
+                      {isSpecialEvent ? '★ 命运转折 ★' : '命运的回响'}
+                    </span>
+                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />}
+                  </div>
+                  <p className={`text-xl sm:text-2xl md:text-3xl leading-relaxed font-bold max-w-xl ${isSpecialEvent ? 'text-amber-100' : 'text-pink-50'}`}>
+                    {lastConsequence}
+                  </p>
+                  {hasStatChanges && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                      {statChangesList.map(({ label, value }) => (
+                        <span key={label}
+                          className={`inline-flex items-center gap-1 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full text-base sm:text-lg font-black border stat-badge-up ${
+                            value > 0 ? 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
+                            : value < 0 ? 'bg-red-500/20 border-red-400/30 text-red-300'
+                            : 'bg-white/10 border-white/20 text-white/50'
+                          }`}>{label}<span>{value > 0 ? '+' : ''}{value}</span></span>
+                      ))}
+                    </div>
+                  )}
+                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleDismissConsequence}
+                    className={`!px-10 !py-4 mx-auto text-base sm:text-lg ${isSpecialEvent ? 'golden-button' : 'aurora-button'}`}>
+                    {isSpecialEvent ? '握住命运的丝线' : '继续前行'}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          ) : loading ? (
             <motion.div key="loading" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }}
               className="flex flex-col items-center justify-center py-12 sm:py-16 md:py-20">
               <div className="classical-frame p-8 sm:p-12 md:p-16 flex flex-col items-center gap-6 sm:gap-8 md:gap-10">
@@ -423,45 +461,8 @@ ${recentHistory || '（游戏开始）'}
                 </div>
               </div>
             </motion.div>
-          ) : currentEvent && (
+          ) : currentEvent ? (
             <motion.div key="event" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 md:space-y-10">
-              <AnimatePresence>
-                {showConsequence && (
-                  <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                    className={isSpecialEvent ? 'special-event-frame p-6 sm:p-8 md:p-10 text-center relative' : 'classical-frame p-6 sm:p-8 md:p-10 text-center relative'}>
-                    {!isSpecialEvent && <><div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" /><div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" /></>}
-                    <div className="relative z-10 space-y-5 sm:space-y-6">
-                      <div className="flex items-center justify-center gap-2 sm:gap-3">
-                        {isSpecialEvent ? <Star className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" /> : <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-pink-400" />}
-                        <span className={`text-xs sm:text-sm font-black uppercase tracking-[0.3em] ${isSpecialEvent ? 'text-amber-300/70' : 'text-pink-300/60'}`}>
-                          {isSpecialEvent ? '★ 命运转折 ★' : '命运的回响'}
-                        </span>
-                        {isSpecialEvent ? <Star className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" /> : <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-pink-400" />}
-                      </div>
-                      <p className={`text-lg sm:text-xl md:text-2xl leading-relaxed font-bold ${isSpecialEvent ? 'text-amber-100' : 'text-pink-50'}`}>
-                        {lastConsequence}
-                      </p>
-                      {hasStatChanges && (
-                        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-                          {statChangesList.map(({ label, value }) => (
-                            <span key={label}
-                              className={`inline-flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-sm sm:text-base font-black border stat-badge-up ${
-                                value > 0 ? 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
-                                : value < 0 ? 'bg-red-500/20 border-red-400/30 text-red-300'
-                                : 'bg-white/10 border-white/20 text-white/50'
-                              }`}>{label}<span>{value > 0 ? '+' : ''}{value}</span></span>
-                          ))}
-                        </div>
-                      )}
-                      <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleDismissConsequence}
-                        className={`!px-8 !py-3 mx-auto text-sm sm:text-base ${isSpecialEvent ? 'golden-button' : 'aurora-button'}`}>
-                        {isSpecialEvent ? '握住命运的丝线' : '继续前行'}
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               <div className={eventFrameClass}>
                 {!isSpecialEvent && <><div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" /><div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" /></>}
                 {isSpecialEvent && (
@@ -510,7 +511,7 @@ ${recentHistory || '（游戏开始）'}
                 </div>
               </div>
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
     </div>
