@@ -31,6 +31,7 @@ export default function Home() {
   } | null>(null);
   const [endingSummary, setEndingSummary] = useState('');
   const [endingText, setEndingText] = useState('');
+  const [evaluation, setEvaluation] = useState('');
   const [loadingEnding, setLoadingEnding] = useState(false);
   const [finalStats, setFinalStats] = useState<Stats | null>(null);
 
@@ -62,7 +63,7 @@ export default function Home() {
           messages: [
             {
               role: 'system',
-              content: '你是一个轻小说作家。根据玩家（名字+背景+世界观+全程事件摘要+最终属性），为这段异世界经历写一个感人的结局。结局必须呼应世界观和角色身份。字数150-200字。返回JSON：{"ending": "结局文本"}'
+              content: '你是一个轻小说作家。根据玩家信息写一个感人的结局并给出角色评价。结局呼应世界观和角色身份，字数150-200字。再根据最终属性判定角色类型：智力≥15为智者/军师，魅力≥15为万人迷，体力≥15为战神，运气≥15为天选之人；对应低属性(≤-5)则为懵懂者/默默无闻/体弱多病/倒霉蛋。四项都高为"传奇"，四项都低为"平凡中的奇迹"。用一句40-60字总结角色特点。返回JSON：{"ending": "结局文本", "evaluation": "角色总结"}'
             },
             {
               role: 'user',
@@ -77,10 +78,12 @@ export default function Home() {
       });
       const data = await res.json();
       const content = JSON.parse(data.choices[0].message.content);
-      setEndingText(content.ending);
+      setEndingText(content.ending || '');
+      setEvaluation(content.evaluation || '');
     } catch (err) {
       console.error('Failed to generate ending', err);
       setEndingText('在这个时空的尽头，你的传奇故事画上了句号。虽然没能看到未来的景象，但你在异世界的足迹将永远被星光铭记。');
+      setEvaluation('一个无法被定义的人——这正是灵魂最本真的姿态。');
     } finally {
       setLoadingEnding(false);
     }
@@ -229,6 +232,16 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {evaluation && (
+                <div className="relative z-10 space-y-2">
+                  <div className="h-px w-16 sm:w-24 bg-amber-500/20 mx-auto" />
+                  <h3 className="text-xs sm:text-sm font-black text-amber-300/80 uppercase tracking-[0.2em]">角色评定</h3>
+                  <p className="text-base sm:text-lg leading-relaxed text-amber-100/90 italic font-medium max-w-lg mx-auto">
+                    {evaluation}
+                  </p>
                 </div>
               )}
 
