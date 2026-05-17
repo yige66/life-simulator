@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, User, BookOpen, Globe, Wand2, ChevronRight, Plus, Minus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, User, BookOpen, Globe, Wand2, ChevronRight, Plus, Minus, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 import MagicCircleStats from './MagicCircleStats';
 
@@ -17,6 +17,8 @@ interface Props {
   onStart: (name: string, background: string, worldview: string, stats: Stats) => void;
 }
 
+type GenStatus = 'idle' | 'loading' | 'ok' | 'err';
+
 export default function CharacterCreation({ onStart }: Props) {
   const [name, setName] = useState('');
   const [background, setBackground] = useState('');
@@ -28,8 +30,8 @@ export default function CharacterCreation({ onStart }: Props) {
     运气: 1,
   });
   const [extraPoints, setExtraPoints] = useState(10);
-  const [generatingBg, setGeneratingBg] = useState(false);
-  const [generatingWv, setGeneratingWv] = useState(false);
+  const [bgStatus, setBgStatus] = useState<GenStatus>('idle');
+  const [wvStatus, setWvStatus] = useState<GenStatus>('idle');
 
   const handleStatChange = (stat: keyof Stats, delta: number) => {
     if (delta > 0) {
@@ -48,6 +50,7 @@ export default function CharacterCreation({ onStart }: Props) {
     try {
       const res = await fetch('/api/deepseek', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages }),
         signal: controller.signal,
       });
@@ -69,33 +72,47 @@ export default function CharacterCreation({ onStart }: Props) {
 
   const handleAutoGenerateBackground = async () => {
     if (!name.trim()) return;
-    setGeneratingBg(true);
+    setBgStatus('loading');
     try {
       const raw = await fetchDeepseekRaw([
-        { role: 'system', content: '你是轻小说角色设定助手。根据角色名生成一个简短的身份背景（25-40字），富有日式轻小说风味。返回JSON：{"background":"背景文本"}' },
+        { role: 'system', content: '你是轻小说角色设定助手。根据角色名生成一个简短的身份背景（25-40字），富有日式轻小说风味。返回JSON：{"background":"背景文本"}。不涉及政治。' },
         { role: 'user', content: `角色名：${name}` },
       ]);
       const parsed = safeParse(raw);
-      if (parsed?.background) setBackground(parsed.background);
-    } catch { /* silent */ }
-    setGeneratingBg(false);
+      if (parsed?.background) {
+        setBackground(parsed.background);
+        setBgStatus('ok');
+      } else {
+        setBgStatus('err');
+      }
+    } catch {
+      setBgStatus('err');
+    }
   };
 
   const handleAutoGenerateWorldview = async () => {
     if (!name.trim()) return;
-    setGeneratingWv(true);
+    setWvStatus('loading');
     try {
       const raw = await fetchDeepseekRaw([
         { role: 'system', content: '你是轻小说世界观设定助手。根据角色名和背景，生成一个简短的异世界世界观描述（40-70字），有趣且独特。包含世界的基本法则、魔法/科技水平等。禁止涉及政治。返回JSON：{"worldview":"世界观文本"}' },
         { role: 'user', content: `角色名：${name}，背景：${background || '未知'}。请生成世界观。` },
       ]);
       const parsed = safeParse(raw);
-      if (parsed?.worldview) setWorldview(parsed.worldview);
-    } catch { /* silent */ }
-    setGeneratingWv(false);
+      if (parsed?.worldview) {
+        setWorldview(parsed.worldview);
+        setWvStatus('ok');
+      } else {
+        setWvStatus('err');
+      }
+    } catch {
+      setWvStatus('err');
+    }
   };
 
   const isFormValid = name.trim() !== '' && background.trim() !== '' && worldview.trim() !== '';
+
+  const genBtnBase = 'flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] sm:text-xs font-bold transition-all duration-200';
 
   return (
     <div className="w-full max-w-6xl px-2 sm:px-4 py-4 sm:py-8">
@@ -127,7 +144,7 @@ export default function CharacterCreation({ onStart }: Props) {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between ml-1">
                     <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em]">契约者姓名</label>
-                    <span className="w-6" />
+                    <span className="w-16" />
                   </div>
                   <div className="relative group">
                     <User className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-parchment-text/20 group-focus-within:text-leather-brown transition-colors" />
@@ -138,9 +155,28 @@ export default function CharacterCreation({ onStart }: Props) {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between ml-1">
                     <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em]">身份背景</label>
-                    <button onClick={handleAutoGenerateBackground} disabled={generatingBg || !name.trim()}
-                      className="text-[8px] font-black text-parchment-text/40 hover:text-leather-brown disabled:opacity-30 transition-colors flex items-center gap-1">
-                      <Wand2 className="w-3 h-3" />{generatingBg ? '生成中…' : '自动'}
+                    <button
+                      onClick={handleAutoGenerateBackground}
+                      disabled={bgStatus === 'loading' || !name.trim()}
+                      className={`${genBtnBase} ${
+                        bgStatus === 'loading'
+                          ? 'bg-amber-100/60 border-amber-300/40 text-amber-700'
+                          : bgStatus === 'ok'
+                            ? 'bg-emerald-100/60 border-emerald-300/40 text-emerald-700'
+                            : bgStatus === 'err'
+                              ? 'bg-red-100/40 border-red-300/40 text-red-600'
+                              : 'bg-sakura-pink/20 border-sakura-deep/30 text-sakura-deep hover:bg-sakura-pink/40 hover:border-sakura-deep/50'
+                      } disabled:opacity-40`}
+                    >
+                      {bgStatus === 'loading' ? (
+                        <><Loader2 className="w-3 h-3 animate-spin" />生成中</>
+                      ) : bgStatus === 'ok' ? (
+                        <><CheckCircle className="w-3 h-3" />已生成</>
+                      ) : bgStatus === 'err' ? (
+                        <><AlertCircle className="w-3 h-3" />重试</>
+                      ) : (
+                        <><Wand2 className="w-3 h-3" />AI 生成</>
+                      )}
                     </button>
                   </div>
                   <div className="relative group">
@@ -155,15 +191,34 @@ export default function CharacterCreation({ onStart }: Props) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between ml-1">
                   <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em]">世界观设定</label>
-                  <button onClick={handleAutoGenerateWorldview} disabled={generatingWv || !name.trim()}
-                    className="text-[8px] font-black text-parchment-text/40 hover:text-leather-brown disabled:opacity-30 transition-colors flex items-center gap-1">
-                    <Wand2 className="w-3 h-3" />{generatingWv ? '生成中…' : '自动'}
+                  <button
+                    onClick={handleAutoGenerateWorldview}
+                    disabled={wvStatus === 'loading' || !name.trim()}
+                    className={`${genBtnBase} ${
+                      wvStatus === 'loading'
+                        ? 'bg-amber-100/60 border-amber-300/40 text-amber-700'
+                        : wvStatus === 'ok'
+                          ? 'bg-emerald-100/60 border-emerald-300/40 text-emerald-700'
+                          : wvStatus === 'err'
+                            ? 'bg-red-100/40 border-red-300/40 text-red-600'
+                            : 'bg-sakura-pink/20 border-sakura-deep/30 text-sakura-deep hover:bg-sakura-pink/40 hover:border-sakura-deep/50'
+                    } disabled:opacity-40`}
+                  >
+                    {wvStatus === 'loading' ? (
+                      <><Loader2 className="w-3 h-3 animate-spin" />生成中</>
+                    ) : wvStatus === 'ok' ? (
+                      <><CheckCircle className="w-3 h-3" />已生成</>
+                    ) : wvStatus === 'err' ? (
+                      <><AlertCircle className="w-3 h-3" />重试</>
+                    ) : (
+                      <><Wand2 className="w-3 h-3" />AI 生成</>
+                    )}
                   </button>
                 </div>
                 <div className="relative group">
                   <Globe className="absolute left-3 sm:left-4 top-4 w-4 h-4 sm:w-5 sm:h-5 text-parchment-text/20 group-focus-within:text-leather-brown transition-colors" />
                   <textarea value={worldview} onChange={(e) => setWorldview(e.target.value)}
-                    placeholder="描述这个世界的法则、魔法/科技水平、独特规则……也可以点「自动」让AI为你创造"
+                    placeholder="描述这个世界的法则、魔法/科技水平、独特规则……也可以点「AI 生成」让AI为你创造"
                     rows={3}
                     className="w-full bg-black/5 border border-black/10 rounded-2xl pl-10 sm:pl-12 pr-4 sm:pr-6 py-3 sm:py-4 focus:outline-none focus:border-leather-brown/40 focus:bg-black/10 transition-all text-base sm:text-lg font-medium placeholder:text-parchment-text/20 text-leather-brown resize-none" />
                 </div>
