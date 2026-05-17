@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
-import { M_PLUS_Rounded_1c } from "next/font/google";
 import "./globals.css";
 import StarBackground from "@/components/StarBackground";
-
-const mPlusRounded = M_PLUS_Rounded_1c({ 
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-m-plus-rounded",
-});
 
 export const metadata: Metadata = {
   title: "异世界人生模拟器",
@@ -21,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh">
-      <body className={`${mPlusRounded.variable} font-sans`}>
+      <body className="font-sans">
         <StarBackground />
         {children}
       </body>
