@@ -77,33 +77,37 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
     }
   };
 
-  const STAT_KEYWORDS: Record<keyof Stats, RegExp> = {
-    智力: /智[力慧]|推理|逻辑|记忆|头脑|分析|思考|观察|灵机/,
-    魅力: /魅[力惑]|吸引|气质|风[采度]|交[谈流际]|人[缘脉]|口才|谈吐|亲和/,
-    体力: /体[力能]|力[气量]|身[体躯]|強[壮健]|坚[韧固]|硬[扛抗]|体[魄质]|战斗|伤[势口]|奔[跑驰]|疲[惫倦劳]|虚弱/,
-    运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外/,
+  const STAT_META: Record<string, { keys: string[] }> = {
+    智力: { keys: ['智力', '智慧', '推理', '逻辑', '记忆', '思维', '头脑', '分析', '思考', '灵机'] },
+    魅力: { keys: ['魅力', '吸引', '气质', '风度', '人缘', '口才', '谈吐', '亲和', '交谈', '交际'] },
+    体力: { keys: ['体力', '力量', '身体', '强壮', '坚韧', '战斗', '伤势', '奔跑', '疲惫', '虚弱', '累倒', '透支', '消耗', '力气'] },
+    运气: { keys: ['运气', '幸运', '巧合', '偶然', '机缘', '命运', '奇迹', '天选', '倒霉', '不幸', '意外'] },
   };
 
+  const DOWN_WORDS = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|受伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌到|意外/;
+  const UP_WORDS = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐/;
+
   const resolveEffectsFromConsequence = (consequence: string, rawEffects: Partial<Stats>): Partial<Stats> => {
-    if (!consequence) return rawEffects;
-    const lowered = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|下滑|下跌|变弱|疲惫|受伤|失败|受挫/;
-    const raised = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟/;
+    if (!consequence) return { ...rawEffects };
+    const result: Partial<Stats> = { ...rawEffects };
+    const segments = consequence.split(/[，。；、但然而不过却可是只是而]/).filter(s => s.length > 1);
 
-    const corrected: Partial<Stats> = { ...rawEffects };
+    for (const [statKey, meta] of Object.entries(STAT_META)) {
+      const stat = statKey as keyof Stats;
+      const ownerSeg = segments.find(s => meta.keys.some(k => s.includes(k)));
+      if (!ownerSeg) continue;
+      const ctx = ownerSeg;
 
-    for (const [key, regex] of Object.entries(STAT_KEYWORDS) as [keyof Stats, RegExp][]) {
-      if (!regex.test(consequence)) continue;
-      const effectVal = Number(rawEffects[key]) || 0;
-      if (effectVal === 0) continue;
-      const descDir = lowered.test(consequence) ? 'down' : raised.test(consequence) ? 'up' : null;
-      if (descDir === 'down' && effectVal > 0) {
-        corrected[key] = -Math.abs(effectVal);
-      } else if (descDir === 'up' && effectVal < 0) {
-        corrected[key] = Math.abs(effectVal);
-      }
+      const effectVal = Number(result[stat]) || 0;
+      const dir = DOWN_WORDS.test(ctx) ? 'down' : UP_WORDS.test(ctx) ? 'up' : null;
+
+      if (dir === 'down' && effectVal > 0) result[stat] = -Math.abs(effectVal);
+      else if (dir === 'up' && effectVal < 0) result[stat] = Math.abs(effectVal);
+      else if (dir === 'down' && effectVal === 0) result[stat] = -1;
+      else if (dir === 'up' && effectVal === 0) result[stat] = 1;
     }
 
-    return corrected;
+    return result;
   };
 
   const fetchDeepseek = async (messages: Array<{ role: string; content: string }>, timeoutMs = 18000) => {
@@ -152,14 +156,7 @@ ${scaleHint}
 4. 不能涉及政治话题/政治人物/政治隐喻
 5. 不能涉及色情/暴力/歧视，保持在PG-13
 6. 选项必须和当前事件情境及能力值紧密相关，有3~4个
-7. ★★★ **effects与consequence严格绑定，绝不允许指东打西**：
-   - 每个option的effects对哪个属性做了修改，其consequence就必须明确解释那个属性为何变化
-   - consequence中提到了"智力提升了"→effects里必须有智力正值
-   - consequence中提到了"受伤/疲惫"→effects里必须有体力负值
-   - consequence中提到了"吸引/结交"→effects里必须有魅力变化
-   - consequence中提到了"幸运/奇迹"→effects里必须有运气变化
-   - consequence中提到了"体力耗尽"→effects里必须有体力负值
-   - 绝不允许consequence谈论A属性但effects只改了B属性
+7. **consequence必须自然提及受影响的属性**：在描述后果时用日常语气说明能力值变化，如"你的推理让智力提升了"、"体力因伤势而下降"、"吸引了众人，魅力有所增长"、"运气跌到了谷底"。无需任何特殊格式。
 
 返回严格JSON：
 {
@@ -190,14 +187,7 @@ ${scaleHint}
 3. 选项必须与当前事件情境及能力值紧密相关，有3~4个
 4. 不能涉及政治话题/政治人物/政治隐喻
 5. 不能涉及色情/暴力/歧视，保持在PG-13
-6. ★★★ **effects与consequence严格绑定，绝不允许指东打西**：
-   - 每个option的effects对哪个属性做了修改，其consequence就必须明确解释那个属性为何变化
-   - consequence中提到了"智力提升/推理"→effects里必须有智力正值
-   - consequence中提到了"受伤/疲惫/虚弱"→effects里必须有体力负值
-   - consequence中提到了"吸引/结交/亲和"→effects里必须有魅力变化
-   - consequence中提到了"幸运/奇迹/天选"→effects里必须有运气正值
-   - consequence中提到了"倒霉/不幸"→effects里必须有运气负值
-   - 绝不允许consequence谈论A属性但effects只改了B属性
+6. **consequence必须自然提及受影响的属性**：在描述后果时用日常语气说明能力值变化，如"推理让智力提升了"、"体力因伤势下降"、"吸引了众人魅力增长"、"运气跌到了谷底"。无需任何特殊格式。
 
 返回严格JSON：
   {
