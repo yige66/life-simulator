@@ -77,6 +77,47 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
     }
   };
 
+  const STAT_KEYWORDS: Record<keyof Stats, RegExp> = {
+    智力: /智[力慧]|推理|逻辑|记忆|头脑|分析|思考|观察|灵机/,
+    魅力: /魅[力惑]|吸引|气质|风[采度]|交[谈流际]|人[缘脉]|口才|谈吐|亲和/,
+    体力: /体[力能]|力[气量]|身[体躯]|強[壮健]|坚[韧固]|硬[扛抗]|体[魄质]|战斗|伤[势口]|奔[跑驰]|疲[惫倦劳]|虚弱/,
+    运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外/,
+  };
+
+  const fixConsequenceDirection = (consequence: string, effects: Partial<Stats>) => {
+    if (!consequence) return consequence;
+    const lowered = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|下滑|下跌|变弱|疲惫|受伤|失败|受挫/;
+    const raised = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟/;
+
+    let result = consequence;
+    let mismatched = false;
+
+    for (const [key, regex] of Object.entries(STAT_KEYWORDS) as [keyof Stats, RegExp][]) {
+      if (!regex.test(result)) continue;
+      const effectVal = Number(effects[key]) || 0;
+      if (effectVal !== 0) {
+        const descDir = lowered.test(result) ? 'down' : raised.test(result) ? 'up' : null;
+        if ((descDir === 'down' && effectVal > 0) || (descDir === 'up' && effectVal < 0)) {
+          mismatched = true;
+        }
+      }
+    }
+
+    if (mismatched && Object.keys(effects).length > 0) {
+      console.warn('[fixConsequence] 回响文本方向与effects不一致，已用数值替换', { consequence, effects });
+      result = Object.entries(effects)
+        .filter(([, v]) => (Number(v) || 0) !== 0)
+        .map(([k, v]) => {
+          const label = STAT_LABELS[k as keyof Stats];
+          const n = Number(v) || 0;
+          return n < 0 ? `${label}${n}` : `${label}+${n}`;
+        })
+        .join(' ') + '。';
+    }
+
+    return result;
+  };
+
   const fetchDeepseek = async (messages: Array<{ role: string; content: string }>, timeoutMs = 18000) => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -123,6 +164,14 @@ ${scaleHint}
 4. 不能涉及政治话题/政治人物/政治隐喻
 5. 不能涉及色情/暴力/歧视，保持在PG-13
 6. 选项必须和当前事件情境及能力值紧密相关，有3~4个
+7. ★★★ **effects与consequence严格绑定，绝不允许指东打西**：
+   - 每个option的effects对哪个属性做了修改，其consequence就必须明确解释那个属性为何变化
+   - consequence中提到了"智力提升了"→effects里必须有智力正值
+   - consequence中提到了"受伤/疲惫"→effects里必须有体力负值
+   - consequence中提到了"吸引/结交"→effects里必须有魅力变化
+   - consequence中提到了"幸运/奇迹"→effects里必须有运气变化
+   - consequence中提到了"体力耗尽"→effects里必须有体力负值
+   - 绝不允许consequence谈论A属性但effects只改了B属性
 
 返回严格JSON：
 {
@@ -153,10 +202,18 @@ ${scaleHint}
 3. 选项必须与当前事件情境及能力值紧密相关，有3~4个
 4. 不能涉及政治话题/政治人物/政治隐喻
 5. 不能涉及色情/暴力/歧视，保持在PG-13
+6. ★★★ **effects与consequence严格绑定，绝不允许指东打西**：
+   - 每个option的effects对哪个属性做了修改，其consequence就必须明确解释那个属性为何变化
+   - consequence中提到了"智力提升/推理"→effects里必须有智力正值
+   - consequence中提到了"受伤/疲惫/虚弱"→effects里必须有体力负值
+   - consequence中提到了"吸引/结交/亲和"→effects里必须有魅力变化
+   - consequence中提到了"幸运/奇迹/天选"→effects里必须有运气正值
+   - consequence中提到了"倒霉/不幸"→effects里必须有运气负值
+   - 绝不允许consequence谈论A属性但effects只改了B属性
 
 返回严格JSON：
-{
-  "event": "事件描述（80-120字）",
+  {
+    "event": "事件描述（80-120字）",
   "options": [{"text": "选项", "effects": {"智力": 1}, "consequence": "选择该项的结果简述"}],
   "actionEffects": {"智力": -2},
   "consequence": "选择后的直接后果（40-60字），解释属性为何变化",
@@ -264,7 +321,10 @@ ${recentHistory || '（游戏开始）'}
           });
           onUpdateStats(newStats);
           setLastStatChanges(changes);
-          setLastConsequence(nextEvent.consequence || `你的行动「${userAction}」在命运的织锦上留下了新的纹路。`);
+          setLastConsequence(fixConsequenceDirection(
+            nextEvent.consequence || `你的行动「${userAction}」在命运的织锦上留下了新的纹路。`,
+            changes
+          ));
           if (context?.history) {
             const effText = Object.entries(changes).map(([k, v]) => `${STAT_LABELS[k as keyof Stats]}${v >= 0 ? '+' : ''}${v}`).join(' ');
             setHistory([...context.history, `行动「${userAction}」→ ${nextEvent.consequence || ''} 影响：${effText}`]);
@@ -306,7 +366,8 @@ ${recentHistory || '（游戏开始）'}
     });
     onUpdateStats(newStats);
     setLastStatChanges(changes);
-    const optConsequence = option.consequence || currentEvent?.consequence || `你选择了「${option.text}」，命运的齿轮悄然转动。`;
+    let optConsequence = option.consequence || currentEvent?.consequence || `你选择了「${option.text}」，命运的齿轮悄然转动。`;
+    optConsequence = fixConsequenceDirection(optConsequence, changes);
     setLastConsequence(optConsequence);
     const nextHistory = [...historyRef.current, `事件：${currentEvent?.event} → 选择：${option.text} → ${optConsequence}`];
     setHistory(nextHistory);
