@@ -16,6 +16,7 @@ interface Stats {
 interface Option {
   text: string;
   effects: Partial<Stats>;
+  consequence?: string;
 }
 
 interface EventData {
@@ -99,26 +100,54 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const getSystemPrompt = (hasUserAction: boolean, isSpecial: boolean, stats: Stats) => {
     const typeLabel = isSpecial ? '★特殊事件★' : '普通事件';
     const scaleHint = getStatScaleHint(stats);
-    return `你是一个日式轻小说风格的游戏引擎。保持叙事高度连贯，每个事件都与前文、章节主题、世界观和角色身份自然衔接。
+    
+    if (hasUserAction) {
+      return `你是日式轻小说风格游戏引擎。玩家的自定义动作已发生，你必须根据这个动作生成世界的回应。
+
+**核心规则：event字段必须是玩家动作的直接结果！**
+- "event" = 描述玩家这个动作在世界中造成了什么结果、发生了什么变化、出现了什么新场景
+- "consequence" = 用一句话总结这个动作带来的影响
+- 选项 = 基于这个结果，玩家接下来可以做什么
+- 动作→结果→选项，三者必须紧密关联，不能脱节
 
 当前事件类型：${typeLabel}
-${isSpecial ? '特殊事件规则：事件更加戏剧化、高张力，影响更大；effect数值幅度在±3~±12之间；事件描述更具视觉冲击力。' : '普通事件规则：保持日常冒险节奏，effect数值幅度在±1~±3之间；事件轻松有趣。'}
+${isSpecial ? '特殊事件：更戏剧化、高张力，effect幅度±3~±12。' : '普通事件：日常节奏，effect幅度±1~±3。'}
 ${scaleHint}
 
-生成规则：
-1. 事件必须扎根于「世界观」与「角色身份背景」，不可脱离这些设定
-2. 每次事件推进都要有因果关系
-3. 选项必须与当前事件情境紧密相关
-4. 不得涉及任何政治话题、政治人物、政治隐喻
-5. 不得包含色情、暴力描写，保持在PG-13
-6. 不得出现歧视、侮辱性内容
+规则：
+1. event必须直接来源于玩家动作，不要生成一个毫不相干的独立事件
+2. 事件扎根于「世界观」与「角色身份背景」
+3. 不能涉及政治话题/政治人物/政治隐喻
+4. 不能涉及色情/暴力/歧视，保持在PG-13
+5. 选项必须和当前事件情境紧密相关，有3~4个
 
 返回严格JSON：
 {
-  "event": "事件描述（80-120字，承接前文）",
-  "options": [{"text": "选项", "effects": {"智力": 1}}],
+  "event": "对玩家动作的世界回应（80-120字），描述动作导致的结果和当前场面",
+  "options": [{"text": "选项", "effects": {"智力": 1}, "consequence": "选择该项的结果简述"}],
   "actionEffects": {"智力": -2},
-  "consequence": "选择后的直接后果叙述（40-60字），解释属性为何变化"
+  "consequence": "动作的后果简述（40-60字），说明属性为何变化"
+}`;
+    }
+    
+    return `你是日式轻小说风格游戏引擎。根据当前状态生成一个合理的事件推进。
+
+当前事件类型：${typeLabel}
+${isSpecial ? '特殊事件：更戏剧化、高张力，effect幅度±3~±12。' : '普通事件：日常节奏，effect幅度±1~±3。'}
+${scaleHint}
+
+规则：
+1. 事件扎根于「世界观」与「角色身份背景」，不可脱离设定
+2. 选项必须与当前事件情境紧密相关，有3~4个
+3. 不能涉及政治话题/政治人物/政治隐喻
+4. 不能涉及色情/暴力/歧视，保持在PG-13
+
+返回严格JSON：
+{
+  "event": "事件描述（80-120字）",
+  "options": [{"text": "选项", "effects": {"智力": 1}, "consequence": "选择该项的结果简述"}],
+  "actionEffects": {"智力": -2},
+  "consequence": "选择后的直接后果（40-60字），解释属性为何变化"
 }`;
   };
 
@@ -172,14 +201,23 @@ ${scaleHint}
         { role: 'system', content: getSystemPrompt(!!userAction, isSpecial, statsForPrompt) },
         {
           role: 'user',
-          content: `角色名：${character.name}
+          content: userAction
+            ? `角色名：${character.name}
 身份背景：${character.background}
 世界观：${character.worldview}
-当前篇章：${chapterTitle}
+当前篇章主题：${chapterTitle}
 当前属性：${JSON.stringify(statsForPrompt)}
 近期事件历史：
 ${recentHistory || '（游戏开始）'}
-${userAction ? `\n玩家自定义动作：${userAction}` : ''}
+\n★玩家刚才做了以下动作：${userAction}
+\n请生成这个动作的直接结果。event字段必须是这个世界对该动作的回应——发生了什么变化、出现了什么新场景。`
+            : `角色名：${character.name}
+身份背景：${character.background}
+世界观：${character.worldview}
+当前篇章主题：${chapterTitle}
+当前属性：${JSON.stringify(statsForPrompt)}
+近期事件历史：
+${recentHistory || '（游戏开始）'}
 \n请生成下一个${isSpecial ? '★特殊★' : ''}事件，必须与世界观和角色身份紧密相关。`,
         },
       ]);
@@ -250,8 +288,9 @@ ${userAction ? `\n玩家自定义动作：${userAction}` : ''}
     });
     onUpdateStats(newStats);
     setLastStatChanges(changes);
-    setLastConsequence(currentEvent?.consequence || `你选择了「${option.text}」，命运的齿轮悄然转动。`);
-    const nextHistory = [...historyRef.current, `事件：${currentEvent?.event} → 选择：${option.text} → ${currentEvent?.consequence || ''}`];
+    const optConsequence = option.consequence || currentEvent?.consequence || `你选择了「${option.text}」，命运的齿轮悄然转动。`;
+    setLastConsequence(optConsequence);
+    const nextHistory = [...historyRef.current, `事件：${currentEvent?.event} → 选择：${option.text} → ${optConsequence}`];
     setHistory(nextHistory);
     setShowConsequence(true);
   };
