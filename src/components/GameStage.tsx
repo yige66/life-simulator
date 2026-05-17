@@ -84,38 +84,26 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
     运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外/,
   };
 
-  const fixConsequenceDirection = (consequence: string, effects: Partial<Stats>) => {
-    if (!consequence) return consequence;
+  const resolveEffectsFromConsequence = (consequence: string, rawEffects: Partial<Stats>): Partial<Stats> => {
+    if (!consequence) return rawEffects;
     const lowered = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|下滑|下跌|变弱|疲惫|受伤|失败|受挫/;
     const raised = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟/;
 
-    let result = consequence;
-    let mismatched = false;
+    const corrected: Partial<Stats> = { ...rawEffects };
 
     for (const [key, regex] of Object.entries(STAT_KEYWORDS) as [keyof Stats, RegExp][]) {
-      if (!regex.test(result)) continue;
-      const effectVal = Number(effects[key]) || 0;
-      if (effectVal !== 0) {
-        const descDir = lowered.test(result) ? 'down' : raised.test(result) ? 'up' : null;
-        if ((descDir === 'down' && effectVal > 0) || (descDir === 'up' && effectVal < 0)) {
-          mismatched = true;
-        }
+      if (!regex.test(consequence)) continue;
+      const effectVal = Number(rawEffects[key]) || 0;
+      if (effectVal === 0) continue;
+      const descDir = lowered.test(consequence) ? 'down' : raised.test(consequence) ? 'up' : null;
+      if (descDir === 'down' && effectVal > 0) {
+        corrected[key] = -Math.abs(effectVal);
+      } else if (descDir === 'up' && effectVal < 0) {
+        corrected[key] = Math.abs(effectVal);
       }
     }
 
-    if (mismatched && Object.keys(effects).length > 0) {
-      console.warn('[fixConsequence] 回响文本方向与effects不一致，已用数值替换', { consequence, effects });
-      result = Object.entries(effects)
-        .filter(([, v]) => (Number(v) || 0) !== 0)
-        .map(([k, v]) => {
-          const label = STAT_LABELS[k as keyof Stats];
-          const n = Number(v) || 0;
-          return n < 0 ? `${label}${n}` : `${label}+${n}`;
-        })
-        .join(' ') + '。';
-    }
-
-    return result;
+    return corrected;
   };
 
   const fetchDeepseek = async (messages: Array<{ role: string; content: string }>, timeoutMs = 18000) => {
@@ -310,24 +298,26 @@ ${recentHistory || '（游戏开始）'}
         setIsSpecialEvent(false);
       } else {
         if (userAction && nextEvent.actionEffects && typeof nextEvent.actionEffects === 'object') {
-          const newStats = { ...statsForPrompt };
           const changes: Partial<Stats> = {};
           Object.entries(nextEvent.actionEffects).forEach(([key, value]) => {
             const k = key as keyof Stats;
             const v = typeof value === 'number' ? value : Number(value);
             if (!Number.isFinite(v)) return;
-            newStats[k] = (newStats[k] ?? 0) + v;
             changes[k] = (changes[k] ?? 0) + v;
           });
+          const consequenceText = nextEvent.consequence || `你的行动「${userAction}」在命运的织锦上留下了新的纹路。`;
+          const resolved = resolveEffectsFromConsequence(consequenceText, changes);
+          const newStats = { ...statsForPrompt };
+          Object.entries(resolved).forEach(([key, value]) => {
+            const k = key as keyof Stats;
+            newStats[k] = (newStats[k] ?? 0) + (value ?? 0);
+          });
           onUpdateStats(newStats);
-          setLastStatChanges(changes);
-          setLastConsequence(fixConsequenceDirection(
-            nextEvent.consequence || `你的行动「${userAction}」在命运的织锦上留下了新的纹路。`,
-            changes
-          ));
+          setLastStatChanges(resolved);
+          setLastConsequence(consequenceText);
           if (context?.history) {
-            const effText = Object.entries(changes).map(([k, v]) => `${STAT_LABELS[k as keyof Stats]}${v >= 0 ? '+' : ''}${v}`).join(' ');
-            setHistory([...context.history, `行动「${userAction}」→ ${nextEvent.consequence || ''} 影响：${effText}`]);
+            const effText = Object.entries(resolved).filter(([, v]) => v !== 0).map(([k, v]) => `${STAT_LABELS[k as keyof Stats]}${(v ?? 0) >= 0 ? '+' : ''}${v}`).join(' ');
+            setHistory([...context.history, `行动「${userAction}」→ ${consequenceText} 影响：${effText}`]);
           }
         }
         const normalizedOptions = (nextEvent.options || []).map((opt: any) => ({
@@ -355,21 +345,26 @@ ${recentHistory || '（游戏开始）'}
   };
 
   const handleOptionSelect = (option: Option) => {
-    const newStats = { ...statsRef.current };
-    const changes: Partial<Stats> = {};
+    const consequenceText = option.consequence || currentEvent?.consequence || `你选择了「${option.text}」，命运的齿轮悄然转动。`;
+    const rawEffects: Partial<Stats> = {};
     Object.entries(option.effects ?? {}).forEach(([key, value]) => {
       const k = key as keyof Stats;
       const v = typeof value === 'number' ? value : Number(value);
       if (!Number.isFinite(v)) return;
-      newStats[k] = (newStats[k] ?? 0) + v;
-      changes[k] = (changes[k] ?? 0) + v;
+      rawEffects[k] = (rawEffects[k] ?? 0) + v;
+    });
+    const resolved = resolveEffectsFromConsequence(consequenceText, rawEffects);
+    const newStats = { ...statsRef.current };
+    const changes: Partial<Stats> = {};
+    Object.entries(resolved).forEach(([key, value]) => {
+      const k = key as keyof Stats;
+      newStats[k] = (newStats[k] ?? 0) + (value ?? 0);
+      changes[k] = (changes[k] ?? 0) + (value ?? 0);
     });
     onUpdateStats(newStats);
     setLastStatChanges(changes);
-    let optConsequence = option.consequence || currentEvent?.consequence || `你选择了「${option.text}」，命运的齿轮悄然转动。`;
-    optConsequence = fixConsequenceDirection(optConsequence, changes);
-    setLastConsequence(optConsequence);
-    const nextHistory = [...historyRef.current, `事件：${currentEvent?.event} → 选择：${option.text} → ${optConsequence}`];
+    setLastConsequence(consequenceText);
+    const nextHistory = [...historyRef.current, `事件：${currentEvent?.event} → 选择：${option.text} → ${consequenceText}`];
     setHistory(nextHistory);
     setShowConsequence(true);
   };
