@@ -89,9 +89,10 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const getStatScaleHint = (stats: Stats) => {
     const maxVal = Math.max(...Object.values(stats));
     const minVal = Math.min(...Object.values(stats));
-    if (maxVal >= 50) return '该角色某项属性极高（≥50），应生成夸张、传奇级别的事件和后果，effect数值使用较大幅度（±5~±15）。';
-    if (maxVal >= 20) return '该角色属性较高（≥20），事件应有一定规模和戏剧性，effect幅度适中（±3~±8）。';
-    if (minVal <= -10) return '该角色某项属性极低（≤-10），应生成表现其弱势或困境的事件，负面影响可能较大。';
+    const absMax = Math.max(Math.abs(maxVal), Math.abs(minVal));
+    if (absMax >= 50) return `该角色某项属性数值极端（绝对值≥50），应生成极度夸张、传奇甚至荒诞级别的事件和后果，effect数值幅度±5~±15。${maxVal >= 50 ? '超高属性方向：展现神级能力或传说级存在感。' : '极低属性方向（≤-50）：展现灾难性短板带来的荒谬或戏剧性局面。'}`;
+    if (absMax >= 20) return '该角色属性显著偏离常轨（绝对值≥20），事件应有一定规模和戏剧性，effect幅度适中（±3~±8）。';
+    if (absMax >= 10) return '该角色属性略高于或低于常人，事件可有一定起伏，effect幅度±1~±4。';
     return '';
   };
 
