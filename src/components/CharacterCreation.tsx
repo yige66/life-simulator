@@ -112,7 +112,7 @@ export default function CharacterCreation({ onStart }: Props) {
 
   const isFormValid = name.trim() !== '' && background.trim() !== '' && worldview.trim() !== '';
 
-  const genBtnBase = 'flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] sm:text-xs font-bold transition-all duration-200';
+  const genBtnBase = 'flex items-center gap-1 px-2.5 py-0.5 rounded-lg border text-[10px] sm:text-xs font-bold transition-all duration-200';
 
   return (
     <div className="w-full max-w-6xl px-2 sm:px-4 py-4 sm:py-8">
@@ -141,8 +141,8 @@ export default function CharacterCreation({ onStart }: Props) {
             <div className="space-y-4 sm:space-y-5">
               {/* Name & Background */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between ml-1">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between ml-1 min-h-[26px]">
                     <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em]">契约者姓名</label>
                     <span className="w-16" />
                   </div>
@@ -152,8 +152,8 @@ export default function CharacterCreation({ onStart }: Props) {
                       className="w-full bg-black/5 border border-black/10 rounded-2xl pl-10 sm:pl-12 pr-4 sm:pr-6 py-3 sm:py-4 focus:outline-none focus:border-leather-brown/40 focus:bg-black/10 transition-all text-base sm:text-lg font-medium placeholder:text-parchment-text/20 text-leather-brown" />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between ml-1">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between ml-1 min-h-[26px]">
                     <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em]">身份背景</label>
                     <button
                       onClick={handleAutoGenerateBackground}
@@ -188,8 +188,8 @@ export default function CharacterCreation({ onStart }: Props) {
               </div>
 
               {/* Worldview */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between ml-1">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between ml-1 min-h-[26px]">
                   <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em]">世界观设定</label>
                   <button
                     onClick={handleAutoGenerateWorldview}
