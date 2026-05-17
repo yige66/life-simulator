@@ -88,8 +88,8 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const UP_WORDS = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐/;
 
   const resolveEffectsFromConsequence = (consequence: string, rawEffects: Partial<Stats>): Partial<Stats> => {
-    if (!consequence) return { ...rawEffects };
-    const result: Partial<Stats> = { ...rawEffects };
+    if (!consequence) return {};
+    const result: Partial<Stats> = {};
     const segments = consequence.split(/[，。；、但然而不过却可是只是而]/).filter(s => s.length > 1);
 
     for (const [statKey, meta] of Object.entries(STAT_META)) {
@@ -98,13 +98,12 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
       if (!ownerSeg) continue;
       const ctx = ownerSeg;
 
-      const effectVal = Number(result[stat]) || 0;
+      const rawVal = Math.abs(Number(rawEffects[stat]) || 0);
       const dir = DOWN_WORDS.test(ctx) ? 'down' : UP_WORDS.test(ctx) ? 'up' : null;
+      if (!dir) continue;
 
-      if (dir === 'down' && effectVal > 0) result[stat] = -Math.abs(effectVal);
-      else if (dir === 'up' && effectVal < 0) result[stat] = Math.abs(effectVal);
-      else if (dir === 'down' && effectVal === 0) result[stat] = -1;
-      else if (dir === 'up' && effectVal === 0) result[stat] = 1;
+      const magnitude = rawVal > 0 ? rawVal : 1;
+      result[stat] = dir === 'down' ? -magnitude : magnitude;
     }
 
     return result;
@@ -151,7 +150,7 @@ ${scaleHint}
 
 规则：
 1. event必须直接来源于玩家动作，不要生成一个毫不相干的独立事件
-2. **能力值驱动结果**：动作的结果必须根据当前属性值来判定——高相关属性导致成功/惊喜，低属性导致失败/意外。NPC对主角的态度也必须与能力值挂钩。
+2. **属性值决定行动成败**：必须根据当前属性值来判定动作的成败——高智力(≥10)角色分析/识破更易成功，高魅力(≥10)角色社交/说服更易成功，高体力(≥10)角色战斗/突破更易成功，高运气(≥10)角色能获得意外助力。低属性(≤0)则导致吃力、失败或闹笑话。NPC对主角的态度也随属性高低而变化。
 3. 事件扎根于「世界观」与「角色身份背景」
 4. 不能涉及政治话题/政治人物/政治隐喻
 5. 不能涉及色情/暴力/歧视，保持在PG-13
@@ -180,13 +179,12 @@ ${isSpecial ? '★命运转折点★：这是一次极为罕见的命运转折�
 ${scaleHint}
 
 规则：
-1. **能力值必须主导剧情**：事件难度、NPC对主角的态度和反应、可用手段、选项合理度必须完全参照当前属性值。
-   - 高智力→NPC敬畏你的智慧、主动请教、被视为军师
-   - 高魅力→NPC倾倒于你的魅力、主动示好、被当成偶像
-   - 高体力→NPC畏惧你的力量、求助护卫、被当做战神
-   - 高运气→NPC称你为"天选之人"、迷信般地依附你
-   - 极低属性→NPC轻视、嘲笑、疏远、或把你当成弱者欺负
-   - 事件描述中明确体现NPC看到你时的反应和态度转折
+1. **能力值决定命运**：事件难度、结果成败、NPC态度、可用选项必须完全参照当前属性值。
+   - 智力≥10→分析识破轻而易举，NPC敬畏求教；智力≤0→误判被误导
+   - 魅力≥10→社交说服无往不利，NPC倾倒追随；魅力≤0→被冷落无视
+   - 体力≥10→战斗突破势如破竹，NPC畏惧求助；体力≤0→虚弱吃亏
+   - 运气≥10→巧合奇迹常伴，被称为天选之人；运气≤0→倒霉意外不断
+   - 事件描述中体现属性值带来的直接因果：因某项高属性而得利，因某项低属性而受挫
 2. 事件扎根于「世界观」与「角色身份背景」，不可脱离设定
 3. 选项必须与当前事件情境及能力值紧密相关，有3~4个
 4. 不能涉及政治话题/政治人物/政治隐喻
