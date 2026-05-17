@@ -45,7 +45,7 @@ const STAT_LABELS: Record<keyof Stats, string> = {
   运气: '运气',
 };
 
-const SPECIAL_CHANCE = 0.15;
+const SPECIAL_CHANCE = 0.01;
 
 export default function GameStage({ character, onUpdateStats, onGameEnd }: Props) {
   const [chapters, setChapters] = useState<string[]>([]);
@@ -130,7 +130,7 @@ ${scaleHint}
 }`;
     }
     
-    return `你是日式轻小说风格游戏引擎。根据当前状态生成一个合理的事件推进。
+    return `你是日式轻小说风格游戏引擎。每个章节代表角色人生的一个阶段，阶段内事件之间时间连续、情节紧密关联（如同一天/同一周发生的事）。跨阶段之间可以跳过数月甚至数年。
 
 当前事件类型：${typeLabel}
 ${isSpecial ? '特殊事件：更戏剧化、高张力，effect幅度±3~±12。' : '普通事件：日常节奏，effect幅度±1~±3。'}
@@ -170,7 +170,7 @@ ${scaleHint}
       setLoading(true);
       try {
         const raw = await fetchDeepseek([
-          { role: 'system', content: `你是轻小说作家。根据玩家信息生成2-4个篇章标题，标题必须呼应世界观和角色身份，叙事有递进关系。返回JSON：{"chapters": ["标题1", "标题2"]}` },
+          { role: 'system', content: `你是轻小说作家。根据玩家信息生成3-4个"人生阶段"标题（如"初入异世界"、"冒险者成名录"、"王都风云"）。每个标题代表角色人生的一个阶段，阶段之间可以有数月到数年的时间跨度。标题必须呼应世界观和角色身份，按人生进程递进。返回JSON：{"chapters": ["标题1", "标题2"]}` },
           { role: 'user', content: `名字：${character.name}，背景：${character.background}，世界观：${character.worldview}` },
         ]);
         const parsed = safeParseJsonFromModel(raw);
@@ -214,8 +214,9 @@ ${recentHistory || '（游戏开始）'}
             : `角色名：${character.name}
 身份背景：${character.background}
 世界观：${character.worldview}
-当前篇章主题：${chapterTitle}
+当前人生阶段：${chapterTitle}
 当前属性：${JSON.stringify(statsForPrompt)}
+${eventCount === 0 ? `（这是新阶段的第一个事件，可以跳过一段时间，描写角色在新阶段的生活状态）` : `（这是本阶段的第${eventCount + 1}个事件，请与上一个事件保持时间连续性）`}
 近期事件历史：
 ${recentHistory || '（游戏开始）'}
 \n请生成下一个${isSpecial ? '★特殊★' : ''}事件，必须与世界观和角色身份紧密相关。`,
@@ -310,7 +311,7 @@ ${recentHistory || '（游戏开始）'}
   };
 
   const checkProgression = (statsOverride?: Stats, historyOverride?: string[]) => {
-    if (eventCount >= 5) {
+    if (eventCount >= 4) {
       if (currentChapterIndex < chapters.length - 1) {
         setCurrentChapterIndex(prev => prev + 1);
         setEventCount(0);
@@ -391,7 +392,7 @@ ${recentHistory || '（游戏开始）'}
             <div className={`absolute inset-0 border-y ${isSpecialEvent ? 'bg-amber-500/15 border-amber-400/40' : 'bg-pink-500/10 border-pink-500/30'} skew-x-[-20deg] group-hover:bg-pink-500/20 transition-colors`} />
             <div className="relative flex items-center gap-2 sm:gap-4 md:gap-6">
               {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-pink-300 animate-pulse" />}
-              <span className={`text-lg sm:text-xl md:text-3xl font-black tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] uppercase text-center leading-tight ${isSpecialEvent ? 'text-amber-200 text-glow-gold' : 'text-pink-200 text-glow-sakura'}`}>
+              <span className={`text-lg sm:text-xl md:text-3xl font-black tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] uppercase text-center leading-tight ${isSpecialEvent ? 'text-amber-200 text-glow-gold' : 'text-pink-100 text-glow-sakura'}`}>
                 {chapters[currentChapterIndex] || '连接异世界中...'}
               </span>
               {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-pink-300 animate-pulse" />}
@@ -417,12 +418,12 @@ ${recentHistory || '（游戏开始）'}
                 <div className="relative z-10 space-y-6 sm:space-y-8">
                   <div className="flex items-center justify-center gap-2 sm:gap-3">
                     {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />}
-                    <span className={`text-sm sm:text-base font-black uppercase tracking-[0.3em] ${isSpecialEvent ? 'text-amber-300/70' : 'text-pink-300/60'}`}>
+                    <span className={`text-sm sm:text-base font-black uppercase tracking-[0.3em] ${isSpecialEvent ? 'text-amber-300/80' : 'text-pink-300/80'}`}>
                       {isSpecialEvent ? '★ 命运转折 ★' : '命运的回响'}
                     </span>
                     {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />}
                   </div>
-                  <p className={`text-xl sm:text-2xl md:text-3xl leading-relaxed font-bold max-w-xl ${isSpecialEvent ? 'text-amber-100' : 'text-pink-50'}`}>
+                  <p className={`text-xl sm:text-2xl md:text-3xl leading-relaxed font-bold max-w-xl ${isSpecialEvent ? 'text-amber-50' : 'text-white'}`}>
                     {lastConsequence}
                   </p>
                   {hasStatChanges && (
@@ -456,8 +457,8 @@ ${recentHistory || '（游戏开始）'}
                   <div className="absolute inset-6 bg-pink-400/5 rounded-full animate-pulse" />
                 </div>
                 <div className="space-y-2 text-center">
-                  <p className="text-lg sm:text-xl md:text-2xl font-black text-pink-200 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] animate-pulse text-glow-sakura">命运编织中</p>
-                  <p className="text-[10px] sm:text-xs text-pink-100/30 uppercase tracking-[0.2em]">Intertwining Fates...</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-black text-pink-100 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] animate-pulse text-glow-sakura">命运编织中</p>
+                  <p className="text-[10px] sm:text-xs text-pink-100/50 uppercase tracking-[0.2em]">Intertwining Fates...</p>
                 </div>
               </div>
             </motion.div>
@@ -474,14 +475,14 @@ ${recentHistory || '（游戏开始）'}
                 )}
                 <div className={`absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 ${isSpecialEvent ? 'mt-4' : ''}`}>
                   <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-pink-500/30'}`} />
-                  <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] ${isSpecialEvent ? 'text-amber-300/50' : 'text-pink-300/40'}`}>Scenario Log</span>
+                  <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] ${isSpecialEvent ? 'text-amber-300/50' : 'text-pink-300/70'}`}>Scenario Log</span>
                   <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-pink-500/30'}`} />
                 </div>
-                <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl leading-relaxed font-bold px-2 sm:px-4 ${isSpecialEvent ? 'text-amber-50' : 'text-pink-50'}`}>
+                <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl leading-relaxed font-bold px-2 sm:px-4 ${isSpecialEvent ? 'text-amber-50' : 'text-white'}`}>
                   {currentEvent.event}
                 </p>
-                <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 sm:px-6 py-1 border rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-black ${isSpecialEvent ? 'bg-amber-900/80 border-amber-500/40 text-amber-300/60' : 'bg-night border-pink-500/30 text-pink-300/50'}`}>
-                  Event {eventCount} / 5
+                <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 sm:px-6 py-1 border rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-black ${isSpecialEvent ? 'bg-amber-900/80 border-amber-500/40 text-amber-300/60' : 'bg-night border-pink-500/30 text-pink-300/70'}`}>
+                  Event {eventCount} / 4
                 </div>
               </div>
 
@@ -502,7 +503,7 @@ ${recentHistory || '（游戏开始）'}
                   <div className="relative glass-panel !rounded-[2rem] p-1.5 sm:p-2 flex items-center gap-2 sm:gap-3 border-white/10 focus-within:border-pink-500/30 transition-all">
                     <input type="text" value={customInput} onChange={(e) => setCustomInput(e.target.value)}
                       placeholder="编织你独特的意志..." onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
-                      className="flex-1 bg-transparent border-none focus:ring-0 px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-sm sm:text-lg font-medium placeholder:text-pink-100/20" />
+                      className="flex-1 bg-transparent border-none focus:ring-0 px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-sm sm:text-lg font-medium placeholder:text-pink-100/50 text-white" />
                     <button onClick={handleCustomSubmit}
                       className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-pink-500/10 hover:bg-pink-500/30 rounded-2xl transition-all flex items-center justify-center group/btn shrink-0">
                       <Send className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-pink-300 group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all" />
