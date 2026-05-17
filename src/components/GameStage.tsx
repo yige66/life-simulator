@@ -263,7 +263,7 @@ ${recentHistory || '（游戏开始）'}
           isSpecial,
         });
       }
-      setShowConsequence(true);
+      if (userAction) setShowConsequence(true);
       setEventCount(prev => prev + 1);
     } catch (err) {
       console.error('Failed to generate event', err);
