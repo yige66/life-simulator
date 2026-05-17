@@ -408,18 +408,18 @@ ${recentHistory || '（游戏开始）'}
         <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-6">
           <motion.div key={chapters[currentChapterIndex]} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
             className="relative px-6 sm:px-8 md:px-12 py-3 sm:py-4 group">
-            <div className={`absolute inset-0 border-y ${isSpecialEvent ? 'bg-amber-500/15 border-amber-400/40' : 'bg-pink-500/10 border-pink-500/30'} skew-x-[-20deg] group-hover:bg-pink-500/20 transition-colors`} />
+            <div className={`absolute inset-0 border-y ${isSpecialEvent ? 'bg-amber-500/15 border-amber-400/40' : 'bg-cyan-500/10 border-cyan-500/30'} skew-x-[-20deg] group-hover:bg-cyan-500/20 transition-colors`} />
             <div className="relative flex items-center gap-2 sm:gap-4 md:gap-6">
-              {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-pink-300 animate-pulse" />}
-              <span className={`text-lg sm:text-xl md:text-3xl font-black tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] uppercase text-center leading-tight ${isSpecialEvent ? 'text-amber-200 text-glow-gold' : 'text-pink-100 text-glow-sakura'}`}>
+              {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-cyan-300 animate-pulse" />}
+              <span className={`text-lg sm:text-xl md:text-3xl font-black tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] uppercase text-center leading-tight ${isSpecialEvent ? 'text-amber-200 text-glow-gold' : 'text-cyan-100 text-glow-sakura'}`}>
                 {chapters[currentChapterIndex] || '连接异世界中...'}
               </span>
-              {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-pink-300 animate-pulse" />}
+              {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-cyan-300 animate-pulse" />}
             </div>
           </motion.div>
           <div className="flex gap-2">
             {chapters.map((_, i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentChapterIndex ? 'w-8 sm:w-10 md:w-12 bg-pink-400 text-glow-sakura' : 'w-3 sm:w-4 bg-white/10'}`} />
+              <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentChapterIndex ? 'w-8 sm:w-10 md:w-12 bg-cyan-400 text-glow-sakura' : 'w-3 sm:w-4 bg-white/10'}`} />
             ))}
           </div>
         </div>
@@ -436,11 +436,11 @@ ${recentHistory || '（游戏开始）'}
                 <div className="ornament-bg" />
                 <div className="relative z-10 space-y-6 sm:space-y-8">
                   <div className="flex items-center justify-center gap-2 sm:gap-3">
-                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />}
-                    <span className={`text-sm sm:text-base font-black uppercase tracking-[0.3em] ${isSpecialEvent ? 'text-amber-300/80' : 'text-pink-300/80'}`}>
+                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
+                    <span className={`text-sm sm:text-base font-black uppercase tracking-[0.3em] ${isSpecialEvent ? 'text-amber-300/80' : 'text-cyan-300/80'}`}>
                       {isSpecialEvent ? '★ 命运转折 ★' : '命运的回响'}
                     </span>
-                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />}
+                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
                   </div>
                   <p className={`text-xl sm:text-2xl md:text-3xl leading-relaxed font-bold max-w-xl ${isSpecialEvent ? 'text-amber-50' : 'text-white'}`}>
                     {lastConsequence}
@@ -471,13 +471,13 @@ ${recentHistory || '（游戏开始）'}
                 <div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" />
                 <div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" />
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32">
-                  <div className="absolute inset-0 border-4 border-pink-400/10 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
-                  <div className="absolute inset-6 bg-pink-400/5 rounded-full animate-pulse" />
+                  <div className="absolute inset-0 border-4 border-cyan-400/20 rounded-full" />
+                  <div className="absolute inset-0 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="absolute inset-6 bg-cyan-400/10 rounded-full animate-pulse" />
                 </div>
                 <div className="space-y-2 text-center">
-                  <p className="text-lg sm:text-xl md:text-2xl font-black text-pink-100 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] animate-pulse text-glow-sakura">命运编织中</p>
-                  <p className="text-[10px] sm:text-xs text-pink-100/50 uppercase tracking-[0.2em]">Intertwining Fates...</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-black text-cyan-100 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] animate-pulse text-glow-sakura">命运编织中</p>
+                  <p className="text-[10px] sm:text-xs text-cyan-100/70 uppercase tracking-[0.2em]">Intertwining Fates...</p>
                 </div>
               </div>
             </motion.div>
@@ -493,14 +493,14 @@ ${recentHistory || '（游戏开始）'}
                   </div>
                 )}
                 <div className={`absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 ${isSpecialEvent ? 'mt-4' : ''}`}>
-                  <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-pink-500/30'}`} />
-                  <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] ${isSpecialEvent ? 'text-amber-300/50' : 'text-pink-300/70'}`}>Scenario Log</span>
-                  <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-pink-500/30'}`} />
+                  <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-cyan-500/30'}`} />
+                  <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] ${isSpecialEvent ? 'text-amber-300/50' : 'text-cyan-300/80'}`}>Scenario Log</span>
+                  <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-cyan-500/30'}`} />
                 </div>
                 <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl leading-relaxed font-bold px-2 sm:px-4 ${isSpecialEvent ? 'text-amber-50' : 'text-white'}`}>
                   {currentEvent.event}
                 </p>
-                <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 sm:px-6 py-1 border rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-black ${isSpecialEvent ? 'bg-amber-900/80 border-amber-500/40 text-amber-300/60' : 'bg-night border-pink-500/30 text-pink-300/70'}`}>
+                <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 sm:px-6 py-1 border rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-black ${isSpecialEvent ? 'bg-amber-900/80 border-amber-500/40 text-amber-300/60' : 'bg-night border-cyan-500/30 text-cyan-300/80'}`}>
                   Event {eventCount + 1}
                 </div>
               </div>
@@ -510,7 +510,7 @@ ${recentHistory || '（游戏开始）'}
                   {currentEvent.options.map((opt, idx) => (
                     <motion.button key={idx} whileHover={{ scale: 1.02, x: 3 }} whileTap={{ scale: 0.98 }} onClick={() => handleOptionSelect(opt)}
                       className={`!justify-start group text-left p-4 sm:p-5 md:p-6 min-h-[70px] sm:min-h-[80px] ${isSpecialEvent ? 'golden-button' : 'aurora-button'}`}>
-                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs sm:text-sm font-black transition-all duration-300 border shrink-0 ${isSpecialEvent ? 'bg-amber-500/20 border-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-amber-950' : 'bg-white/5 border-white/5 text-pink-300 group-hover:bg-aurora-green group-hover:text-night'}`}>
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs sm:text-sm font-black transition-all duration-300 border shrink-0 ${isSpecialEvent ? 'bg-amber-500/20 border-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-amber-950' : 'bg-white/5 border-white/5 text-cyan-300 group-hover:bg-aurora-green group-hover:text-night'}`}>
                         {idx + 1}
                       </div>
                       <span className={`flex-1 text-sm sm:text-base md:text-lg transition-all ml-2 sm:ml-3 ${isSpecialEvent ? 'group-hover:text-amber-200' : 'group-hover:text-glow-aurora'}`}>{opt.text}</span>
@@ -518,14 +518,14 @@ ${recentHistory || '（游戏开始）'}
                   ))}
                 </div>
                 <div className="relative group max-w-2xl mx-auto">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-pink-500/20 via-aurora-green/20 to-pink-500/20 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700" />
-                  <div className="relative glass-panel !rounded-[2rem] p-1.5 sm:p-2 flex items-center gap-2 sm:gap-3 border-white/10 focus-within:border-pink-500/30 transition-all">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-aurora-green/20 to-cyan-500/20 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700" />
+                  <div className="relative glass-panel !rounded-[2rem] p-1.5 sm:p-2 flex items-center gap-2 sm:gap-3 border-white/10 focus-within:border-cyan-500/30 transition-all">
                     <input type="text" value={customInput} onChange={(e) => setCustomInput(e.target.value)}
                       placeholder="编织你独特的意志..." onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
-                      className="flex-1 bg-transparent border-none focus:ring-0 px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-sm sm:text-lg font-medium placeholder:text-pink-100/50 text-white" />
+                      className="flex-1 bg-transparent border-none focus:ring-0 px-4 sm:px-6 md:px-8 py-3 sm:py-4 text-sm sm:text-lg font-medium placeholder:text-cyan-200/50 text-white" />
                     <button onClick={handleCustomSubmit}
-                      className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-pink-500/10 hover:bg-pink-500/30 rounded-2xl transition-all flex items-center justify-center group/btn shrink-0">
-                      <Send className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-pink-300 group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all" />
+                      className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-cyan-500/10 hover:bg-cyan-500/30 rounded-2xl transition-all flex items-center justify-center group/btn shrink-0">
+                      <Send className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-cyan-300 group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all" />
                     </button>
                   </div>
                 </div>

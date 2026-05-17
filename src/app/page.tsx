@@ -121,12 +121,12 @@ export default function Home() {
               <div className="frame-corner frame-corner-br" />
               <div className="ornament-bg" />
               <div className="relative z-10 space-y-3 sm:space-y-4">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-pink-100 text-glow-sakura flex items-center justify-center gap-2 sm:gap-3">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-cyan-100 text-glow-sakura flex items-center justify-center gap-2 sm:gap-3">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                   转生契约 · 确认
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                 </h2>
-                <div className="h-px w-16 sm:w-24 bg-pink-500/30 mx-auto" />
+                <div className="h-px w-16 sm:w-24 bg-cyan-500/30 mx-auto" />
               </div>
 
               <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-left">
@@ -199,19 +199,19 @@ export default function Home() {
               <div className="frame-corner frame-corner-br" />
               <div className="ornament-bg" />
               <div className="space-y-3 sm:space-y-4 relative z-10">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-pink-100 text-glow-sakura flex items-center justify-center gap-2 sm:gap-4">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-cyan-100 text-glow-sakura flex items-center justify-center gap-2 sm:gap-4">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                   物语终焉
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                 </h2>
-                <div className="h-px w-16 sm:w-24 bg-pink-500/30 mx-auto" />
+                <div className="h-px w-16 sm:w-24 bg-cyan-500/30 mx-auto" />
               </div>
               
               <div className="min-h-[100px] sm:min-h-[150px] flex items-center justify-center relative z-10">
                 {loadingEnding ? (
                   <div className="flex flex-col items-center gap-4 sm:gap-6">
-                    <RefreshCw className="w-8 h-8 sm:w-10 sm:h-10 text-pink-400 animate-spin" />
-                    <p className="text-pink-100/50 animate-pulse tracking-widest text-sm sm:text-base">正在编织传奇的终章...</p>
+                    <RefreshCw className="w-8 h-8 sm:w-10 sm:h-10 text-cyan-400 animate-spin" />
+                    <p className="text-cyan-100/70 animate-pulse tracking-widest text-sm sm:text-base">正在编织传奇的终章...</p>
                   </div>
                 ) : (
                   <p className="text-lg sm:text-xl md:text-2xl leading-relaxed text-white italic font-medium">
@@ -222,13 +222,13 @@ export default function Home() {
 
               {finalStats && (
                 <div className="relative z-10 space-y-3">
-                  <div className="h-px w-16 sm:w-24 bg-pink-500/20 mx-auto" />
-                  <h3 className="text-xs sm:text-sm font-black text-pink-300/80 uppercase tracking-[0.2em]">最终能力值</h3>
+                  <div className="h-px w-16 sm:w-24 bg-cyan-500/20 mx-auto" />
+                  <h3 className="text-xs sm:text-sm font-black text-cyan-300/90 uppercase tracking-[0.2em]">最终能力值</h3>
                   <div className="grid grid-cols-4 gap-2 sm:gap-3 max-w-md mx-auto">
                     {Object.entries(finalStats).map(([key, val]) => (
-                      <div key={key} className="bg-pink-500/5 border border-pink-500/10 rounded-xl p-2 sm:p-3 text-center">
-                        <div className="text-[10px] sm:text-xs text-pink-300/70 font-black uppercase tracking-wider">{STAT_LABELS[key as keyof Stats]}</div>
-                        <div className={`text-lg sm:text-xl font-black ${val >= 0 ? 'text-pink-100' : 'text-red-400'}`}>{val}</div>
+                      <div key={key} className="bg-cyan-500/5 border border-cyan-500/10 rounded-xl p-2 sm:p-3 text-center">
+                        <div className="text-[10px] sm:text-xs text-cyan-300/80 font-black uppercase tracking-wider">{STAT_LABELS[key as keyof Stats]}</div>
+                        <div className={`text-lg sm:text-xl font-black ${val >= 0 ? 'text-cyan-100' : 'text-red-400'}`}>{val}</div>
                       </div>
                     ))}
                   </div>
