@@ -125,7 +125,10 @@ export default function CharacterCreation({ onStart }: Props) {
               {/* Name & Background */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em] ml-1">契约者姓名</label>
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="text-[9px] sm:text-[10px] font-black text-parchment-text/60 uppercase tracking-[0.2em] sm:tracking-[0.3em]">契约者姓名</label>
+                    <span className="w-6" />
+                  </div>
                   <div className="relative group">
                     <User className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-parchment-text/20 group-focus-within:text-leather-brown transition-colors" />
                     <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="请输入真名或代号"
