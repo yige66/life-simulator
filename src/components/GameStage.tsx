@@ -224,8 +224,8 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
     return '属性在正常范围，效果幅度±1~±3。';
   };
 
-  const getSystemPrompt = (hasUserAction: boolean, isSpecial: boolean, stats: Stats) => {
-    const typeLabel = isSpecial ? '★命运转折事件★' : '普通事件';
+  const getSystemPrompt = (hasUserAction: boolean, isSpecial: boolean, isMiracle: boolean, miracleStat: string | null, stats: Stats) => {
+    const typeLabel = isMiracle ? `★神迹降临·${miracleStat}★` : isSpecial ? '★命运转折事件★' : '普通事件';
     const scaleHint = getStatScaleHint(stats);
 
     const currentStatsDesc = `当前属性：智力=${stats.智力}（${stats.智力>=10?'高':stats.智力<=0?'低':'中'}），魅力=${stats.魅力}（${stats.魅力>=10?'高':stats.魅力<=0?'低':'中'}），体力=${stats.体力}（${stats.体力>=10?'高':stats.体力<=0?'低':'中'}），运气=${stats.运气}（${stats.运气>=10?'高':stats.运气<=0?'低':'中'}）。`;
@@ -277,7 +277,13 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
 
 ★ milestone：对本次事件中玩家选择及其后果的一句话总结（15-30字），有画面感，如传记批注。`;
 
-    const specialRules = isSpecial ? `
+    const specialRules = isMiracle ? `
+★ 神迹降临特殊规则：
+  - 某项能力值突破80达到神话级别，引发超自然奇迹，彻底改写命运走向。
+  - 叙事必须体现该能力值的主宰级影响——世界因它而动、命运因它而转。
+  - 该属性直接导向玩家心中渴望的结果：逆转绝境、创造奇迹、改写现实。
+  - effectsSummary 幅度 ±10~±30，属性将发生神话级别的剧烈变化。
+  - 示例：智力80+ → 一眼参透世界法则、预知未来；魅力80+ → 万民朝拜、神祇垂青；体力80+ → 肉身不灭、一击碎山；运气80+ → 心想事成、命运本身成为仆从。` : isSpecial ? `
 ★ 命运转折事件特殊规则：
   - 这是极其罕见的关键剧情节点，强烈影响故事走向。
   - 叙事必须体现"命运被改写"的史诗感与决定性。
@@ -288,7 +294,7 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
       return `你是日式轻小说风格游戏引擎。玩家的自定义动作已发生，你必须根据这个动作生成世界的回应。
 
 当前事件：${typeLabel}
-${isSpecial ? '★命运转折点★：极为罕见！事件离奇/夸张/神奇/打破常规。effect幅度±8~±25。' : '普通事件：日常冒险节奏。effect幅度±1~±3。'}
+${isMiracle ? '★神迹降临★：某项能力突破80引发超自然奇迹！直指玩家渴望的结果！彻底改写命运！effect幅度±10~±30。' : isSpecial ? '★命运转折点★：极为罕见！事件离奇/夸张/神奇/打破常规。effect幅度±8~±25。' : '普通事件：日常冒险节奏。effect幅度±1~±3。'}
 ${currentStatsDesc}
 ${statRules}
 ${specialRules}
@@ -317,7 +323,7 @@ ${baseRules}
     return `你是日式轻小说风格游戏引擎。每个章节代表人生一个阶段，阶段内事件时间连续，跨阶段可跳过数月甚至数年。
 
 当前事件：${typeLabel}
-${isSpecial ? '★命运转折点★：极为罕见！事件离奇/夸张/神奇。effect幅度±8~±25，属性剧烈变化。' : '普通事件：日常冒险节奏。effect幅度±1~±3。'}
+${isMiracle ? '★神迹降临★：某项能力突破80引发超自然奇迹！直指玩家渴望的结果！彻底改写命运！effect幅度±10~±30。' : isSpecial ? '★命运转折点★：极为罕见！事件离奇/夸张/神奇。effect幅度±8~±25，属性剧烈变化。' : '普通事件：日常冒险节奏。effect幅度±1~±3。'}
 ${currentStatsDesc}
 ${statRules}
 ${specialRules}
@@ -385,11 +391,16 @@ ${baseRules}
       const historyForPrompt = context?.history ?? historyRef.current;
       const recentHistory = historyForPrompt.slice(-8).join('\n');
       const userAction = context?.userAction;
-      const isSpecial = Math.random() < SPECIAL_CHANCE;
-      setIsSpecialEvent(isSpecial);
+      const highestStat = Math.max(statsForPrompt.智力, statsForPrompt.魅力, statsForPrompt.体力, statsForPrompt.运气);
+      const isMiracle = highestStat >= 80;
+      const miracleStat = isMiracle
+        ? Object.entries(statsForPrompt).find(([, v]) => v === highestStat)?.[0] ?? null
+        : null;
+      const isSpecial = !isMiracle && Math.random() < SPECIAL_CHANCE;
+      setIsSpecialEvent(isSpecial || isMiracle);
 
       const raw = await fetchDeepseek([
-        { role: 'system', content: getSystemPrompt(!!userAction, isSpecial, statsForPrompt) },
+        { role: 'system', content: getSystemPrompt(!!userAction, isSpecial, isMiracle, miracleStat as keyof Stats | null, statsForPrompt) },
         {
           role: 'user',
           content: userAction
@@ -469,7 +480,7 @@ ${recentHistory || '（游戏开始）'}
         if (nextEvent.mood) switchMusic(nextEvent.mood);
       }
       chapterEndRef.current = nextEvent?.chapterEnd === true;
-      if (isSpecial && nextEvent) {
+      if ((isSpecial || isMiracle) && nextEvent) {
         fateEventsRef.current = [...fateEventsRef.current, nextEvent.milestone || nextEvent.narrative.slice(0, 50)];
       }
       if (userAction) setShowConsequence(true);
