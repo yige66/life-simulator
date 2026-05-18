@@ -154,6 +154,9 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const chapterEndRef = useRef(false);
   const fateEventsRef = useRef<string[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const miracleLockedRef = useRef<Set<keyof Stats>>(new Set());
+  const disasterLockedRef = useRef<Set<keyof Stats>>(new Set());
+  const statsForPromptRef = useRef<Stats>(character.stats);
 
   useEffect(() => { statsRef.current = character.stats; }, [character.stats]);
   useEffect(() => { historyRef.current = history; }, [history]);
@@ -409,10 +412,17 @@ ${baseRules}
         ? Object.entries(statsForPrompt).find(([, v]) => v === lowestStat)?.[0] ?? null
         : null;
       const isSpecial = !isMiracle && !isDisaster && Math.random() < SPECIAL_CHANCE;
-      if (isMiracle) setEventType('miracle');
-      else if (isDisaster) setEventType('disaster');
+      if (isMiracle) {
+        setEventType('miracle');
+        if (miracleStat) miracleLockedRef.current.add(miracleStat as keyof Stats);
+      }
+      else if (isDisaster) {
+        setEventType('disaster');
+        if (disasterStat) disasterLockedRef.current.add(disasterStat as keyof Stats);
+      }
       else if (isSpecial) setEventType('special');
       else setEventType('normal');
+      statsForPromptRef.current = { ...statsForPrompt };
 
       const raw = await fetchDeepseek([
         { role: 'system', content: getSystemPrompt(!!userAction, isSpecial, isMiracle, isDisaster, miracleStat as keyof Stats | null, disasterStat as keyof Stats | null, statsForPrompt) },
@@ -469,8 +479,13 @@ ${recentHistory || '（游戏开始）'}
           const changes: Partial<Stats> = {};
           Object.entries(resolved).forEach(([key, value]) => {
             const k = key as keyof Stats;
-            newStats[k] = (newStats[k] ?? 0) + (value ?? 0);
-            changes[k] = (changes[k] ?? 0) + (value ?? 0);
+            const original = newStats[k] ?? 0;
+            const prev = statsForPromptRef.current[k] ?? 0;
+            let next = original + (value ?? 0);
+            if (miracleLockedRef.current.has(k) && next < prev) next = prev;
+            if (disasterLockedRef.current.has(k) && next > prev) next = prev;
+            newStats[k] = next;
+            changes[k] = (changes[k] ?? 0) + (next - original);
           });
           onUpdateStats(newStats);
           setLastStatChanges(changes);
@@ -525,8 +540,13 @@ ${recentHistory || '（游戏开始）'}
     const changes: Partial<Stats> = {};
     Object.entries(resolved).forEach(([key, value]) => {
       const k = key as keyof Stats;
-      newStats[k] = (newStats[k] ?? 0) + (value ?? 0);
-      changes[k] = (changes[k] ?? 0) + (value ?? 0);
+      const original = newStats[k] ?? 0;
+      const prev = statsForPromptRef.current[k] ?? 0;
+      let next = original + (value ?? 0);
+      if (miracleLockedRef.current.has(k) && next < prev) next = prev;
+      if (disasterLockedRef.current.has(k) && next > prev) next = prev;
+      newStats[k] = next;
+      changes[k] = (changes[k] ?? 0) + (next - original);
     });
     onUpdateStats(newStats);
     setLastStatChanges(changes);
