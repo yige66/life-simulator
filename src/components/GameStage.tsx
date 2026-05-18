@@ -81,6 +81,7 @@ const NARRATIVE_STAT_KEYS: Record<keyof Stats, RegExp> = {
 
 const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|受伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌到|意外/;
 const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐/;
+const NARRATIVE_NEGATE = /一扫而空|消[失散退]|恢[复]|愈[合]|治[愈疗]|好[转]|消除|不复存在|退[去却]|挽救|挽回|痊愈/;
 
 const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>): Partial<Stats> => {
   if (!narrative) return {};
@@ -98,7 +99,19 @@ const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>
     const withDir = matching.find(c => NARRATIVE_DOWN.test(c) || NARRATIVE_UP.test(c));
     if (!withDir) { validated[stat] = val; continue; }
 
-    const dir = NARRATIVE_DOWN.test(withDir) ? 'down' : 'up';
+    const isDown = NARRATIVE_DOWN.test(withDir);
+    const isUp = NARRATIVE_UP.test(withDir);
+    const negated = NARRATIVE_NEGATE.test(withDir);
+
+    let dir: 'down' | 'up';
+    if (isDown && isUp) {
+      dir = negated ? 'up' : 'down';
+    } else if (isDown) {
+      dir = negated ? 'up' : 'down';
+    } else {
+      dir = 'up';
+    }
+
     const magnitude = Math.abs(val);
     validated[stat] = dir === 'down' ? -magnitude : magnitude;
   }
@@ -526,7 +539,7 @@ ${recentHistory || '（游戏开始）'}
     : 'classical-frame min-h-[180px] sm:min-h-[220px] md:min-h-[280px] flex items-center justify-center p-6 sm:p-8 md:p-12 text-center relative group';
 
   return (
-    <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 lg:pr-28 relative">
+    <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 relative">
       <div className="fixed top-3 left-3 z-40 flex items-center gap-2">
         <button onClick={toggleBGM}
           className={`px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
