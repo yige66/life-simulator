@@ -216,26 +216,40 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   - NPC态度、社会地位、声望随属性浮动。`;
 
     const baseRules = `
+★ 生成前确认步骤（每次生成 narrative 前必须完成）：
+  1. 复述玩家刚才选择的选项内容或自定义回答。
+  2. 确认当前事件类型（普通/特殊/命运转折）。
+  3. 确认当前阶段标题和已发生的事件数量。
+
 ★ 核心规则：
-  1. narrative(叙事)必须与玩家刚才的选择或自定义输入强相关，必须围绕该选择展开其直接后果。但叙事必须是新的故事发展，绝不能与近期事件历史中的内容重复或只是换一种说法复述同一件事。
+  1. narrative必须严格围绕玩家刚才的选择展开，不得凭空生成新故事方向，不得重复前文已发生的事件内容。如果玩家选了A，故事沿A的后果写；如果玩家自定义输入了行动，故事必须围绕这个行动展开。
   2. narrative是纯粹的文学叙事，不包含任何数字、标签或属性名。用优美的日式轻小说笔法。
   3. 事件必须扎根于「世界观」与「角色身份背景」。
   4. 不能涉及政治话题/政治人物/政治隐喻。
-  6. 选项必须与当前事件情境紧密相关，有2~4个。
+  5. 选项必须与当前事件情境紧密相关，有2~4个。
+
+★ 时间跨度与阶段内连续性：
+  - 每次生成新事件时，应在叙事中体现时间推进（如"第二天清晨""三天后""一周后的黄昏"）。
+  - 同一阶段内的多个事件必须保持叙事连续性，上一个事件的结尾应自然衔接下一个事件的开头。阶段内时间跨度可以很小（同一天、数小时）。
+  - 叙事中应体现当前事件与阶段内前序事件的因果关联（如"因为你三天前救了那名旅人，今天他带着谢礼找到了你"）。
+  - 角色当前状态（受伤、疲惫、兴奋等）应从前一个事件延续到下一个事件，除非叙事中明确交代了状态的改变。
+  - 禁止在阶段内部出现"断崖式跳跃"（如从战斗中突然切到无关的日常场景）。
+  - 跨入新阶段时，必须在叙事中体现明确的时间跳跃（如"三年后""十年后"）和过渡旁白，描述角色成长与变化。
 
 ★ effectsSummary 铁律：
-  - 叙事中明确提到的属性变化，必须在 effectsSummary 中**精确总结**。
-  - **符号必须与叙事一致**：叙事说"体力减弱/受伤/疲惫"→ effectsSummary 该属性必须是负数（如 stamina:-2）；叙事说"智力提升/觉醒/分析成功"→ 必须是正数（如 intelligence:+2）。绝不允许叙事说下降但 effectsSummary 给正值、或叙事说上升但给负值。
+  - narrative中必须自然地描述与属性变化相关的迹象（如"你感到体力不支""你的勇气在增长"）。
+  - 每个回响至少影响一项能力值，除非当前叙事是纯粹的观察性描述（如环境描写、NPC对话，不涉及角色的行动后果）。
+  - 叙事中明确提到的属性变化迹象，必须在 effectsSummary 中精确总结。
+  - **符号必须与叙事一致**：叙事说"体力减弱/受伤/疲惫"→ effectsSummary 该属性必须是负数（如 stamina:-2）；叙事说"智力提升/觉醒/分析成功"→ 必须是正数（如 intelligence:+2）。
   - 叙事中**未提到**的属性，effectsSummary 中**绝不可出现**。
   - effectsSummary 格式：intelligence:+1, stamina:-2（英文属性名:符号数值，逗号分隔）。
-  - 英文属性名只能用：intelligence(智力) charm(魅力) stamina(体力) luck(运气)。
+  - 英文属性名只用：intelligence(智力) charm(魅力) stamina(体力) luck(运气)。
   - 数值幅度：${scaleHint}
 
 ★ mood 选择：
   - calm：平静日常、温暖治愈的场景。
   - mysterious：神秘奇幻、探索未知、悬疑气氛。
   - emotional：命运转折、重大抉择、深情时刻、悲欢离合。
-  根据叙事内容选择最匹配的一个。
 
 ★ milestone：对本次事件中玩家选择及其后果的一句话总结（15-30字），有画面感，如传记批注。`;
 
@@ -358,7 +372,7 @@ ${baseRules}
             ? `角色名：${character.name}
 身份背景：${character.background}
 世界观：${character.worldview}
-当前篇章主题：${chapterTitle}
+当前篇章主题：${chapterTitle}（第${currentChapterIndex + 1}个阶段，本阶段第${eventCount + 1}个事件）
 当前属性：${JSON.stringify(statsForPrompt)}
 近期事件历史：
 ${recentHistory || '（游戏开始）'}
@@ -367,9 +381,9 @@ ${recentHistory || '（游戏开始）'}
             : `角色名：${character.name}
 身份背景：${character.background}
 世界观：${character.worldview}
-当前人生阶段：${chapterTitle}
+当前人生阶段：${chapterTitle}（第${currentChapterIndex + 1}个阶段，本阶段第${eventCount + 1}个事件）
 当前属性：${JSON.stringify(statsForPrompt)}
-${eventCount === 0 ? `（这是新阶段的第一个事件，可以跳过一段时间，描写角色在新阶段的生活状态）` : `（这是本阶段的第${eventCount + 1}个事件，请与上一个事件保持时间连续性）`}
+${eventCount === 0 ? `（新阶段第一个事件，可跳过一段时间，描写角色在新阶段的生活状态）` : `（本阶段第${eventCount + 1}个事件，必须与上一个事件保持时间连续性，从前一个事件的结尾自然衔接）`}
 近期事件历史：
 ${recentHistory || '（游戏开始）'}
 \n请生成下一个${isSpecial ? '★命运转折★' : ''}事件。`,
@@ -516,12 +530,12 @@ ${recentHistory || '（游戏开始）'}
       <div className="fixed top-3 left-3 z-40 flex items-center gap-2">
         <button onClick={toggleBGM}
           className={`px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
-            musicOn ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'bg-[#3d1f14]/90 border-amber-900/30 text-[#f4e4bc]/60'
+            musicOn ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'bg-[#16213e]/90 border-amber-900/30 text-[#f4e4bc]/60'
           }`}>
           {musicOn ? <Music2 className="w-3.5 h-3.5" /> : <Music className="w-3.5 h-3.5" />}
         </button>
         <button onClick={() => setShowStatsModal(true)}
-          className="lg:hidden px-3 py-2 rounded-xl bg-[#3d1f14]/90 border border-amber-900/30 text-[#f4e4bc] text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-2">
+          className="lg:hidden px-3 py-2 rounded-xl bg-[#16213e]/90 border border-amber-900/30 text-[#f4e4bc] text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-2">
           <Eye className="w-3.5 h-3.5" />能力值
         </button>
       </div>
@@ -532,7 +546,7 @@ ${recentHistory || '（游戏开始）'}
           <div className="relative z-10">
             <div className="mb-2 flex items-center justify-center">
               <div className="px-4 py-1 rounded-full border border-black/30 bg-black/[0.06] shadow-sm">
-                <span className="text-[10px] font-black tracking-[0.35em] uppercase text-[#1a0f0a]">Soul Status</span>
+                <span className="text-[10px] font-black tracking-[0.35em] uppercase text-[#1a1a2e]">Soul Status</span>
               </div>
             </div>
             <MagicCircleStats stats={character.stats} className="magic-floating" />
@@ -550,19 +564,19 @@ ${recentHistory || '（游戏开始）'}
               onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setShowStatsModal(false)}
                 className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/10 border border-black/20 flex items-center justify-center">
-                <X className="w-4 h-4 text-[#3d1f14]" />
+                <X className="w-4 h-4 text-[#16213e]" />
               </button>
               <div className="flex items-center justify-center mb-3">
                 <div className="px-4 py-1 rounded-full border border-black/30 bg-black/[0.06] shadow-sm">
-                  <span className="text-xs font-black tracking-[0.3em] uppercase text-[#1a0f0a]">Soul Status</span>
+                  <span className="text-xs font-black tracking-[0.3em] uppercase text-[#1a1a2e]">Soul Status</span>
                 </div>
               </div>
               <MagicCircleStats stats={character.stats} className="mx-auto" size="sm" />
               <div className="mt-4 grid grid-cols-4 gap-2 text-center">
                 {Object.entries(character.stats).map(([key, val]) => (
                   <div key={key} className="bg-black/[0.05] rounded-xl p-2 border border-black/10">
-                    <div className="text-[10px] text-[#4a3728]/60 font-black uppercase tracking-wider">{STAT_LABELS[key as keyof Stats]}</div>
-                    <div className="text-xl font-black text-[#1a0f0a]">{val}</div>
+                    <div className="text-[10px] text-[#1a1a2e]/60 font-black uppercase tracking-wider">{STAT_LABELS[key as keyof Stats]}</div>
+                    <div className="text-xl font-black text-[#1a1a2e]">{val}</div>
                   </div>
                 ))}
               </div>

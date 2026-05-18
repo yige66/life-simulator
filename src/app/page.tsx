@@ -142,7 +142,7 @@ export default function HomePage() {
     <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       <button onClick={toggleTitleBGM}
         className={`fixed top-3 left-3 z-40 px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
-          titleMusicOn ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'bg-[#3d1f14]/90 border-amber-900/30 text-[#f4e4bc]/60'
+          titleMusicOn ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'bg-[#16213e]/90 border-amber-900/30 text-[#f4e4bc]/60'
         }`}>
         {titleMusicOn ? <Music2 className="w-3.5 h-3.5" /> : <Music className="w-3.5 h-3.5" />}
       </button>

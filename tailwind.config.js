@@ -27,10 +27,13 @@ module.exports = {
         parchment: {
           DEFAULT: '#f4e4bc',
           dark: '#e2d1a4',
-          text: '#4a3728',
+          text: '#1a1a2e',
         },
         leather: {
-          brown: '#3d1f14',
+          brown: '#16213e',
+        },
+        accent: {
+          blue: '#0f3460',
         },
       },
       animation: {
