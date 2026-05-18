@@ -234,7 +234,7 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
       : isDisaster ? `★深渊灾厄·${disasterStat}★`
       : isSpecial ? '★命运转折事件★'
       : '普通事件';
-    const scaleHint = getStatScaleHint(stats);
+    const scaleHint = isSpecial ? '命运转折事件效果幅度，±8~±25。' : getStatScaleHint(stats);
 
     const currentStatsDesc = `当前属性：智力=${stats.智力}（${stats.智力>=10?'高':stats.智力<=0?'低':'中'}），魅力=${stats.魅力}（${stats.魅力>=10?'高':stats.魅力<=0?'低':'中'}），体力=${stats.体力}（${stats.体力>=10?'高':stats.体力<=0?'低':'中'}），运气=${stats.运气}（${stats.运气>=10?'高':stats.运气<=0?'低':'中'}）。`;
 
