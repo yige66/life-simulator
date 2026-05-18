@@ -80,7 +80,7 @@ const NARRATIVE_STAT_KEYS: Record<keyof Stats, RegExp> = {
 };
 
 const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|疲劳|受伤|重伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌[了下到]|意外|惨败|落败|不[足好]|困倦|误判|被误导|吃亏|被冷落|无视|变差|打击|内疚/;
-const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐|挽回|痊愈|好转|消散|消失|恢复|愈合|消除|终结|消散|退散|加速|敬[畏佩]|求[教助]|追随|倾倒|称赞|赞赏|出奇|好[转了]|奇遇|治疗|救治/;
+const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐|挽回|痊愈|好转|消散|消失|恢复|愈合|消除|终结|消散|退散|加速|敬[畏佩]|求[教助]|追随|倾倒|称赞|赞赏|出奇|好[转了]|奇遇|治疗|救治|爆发|膨胀|掌控|冲天|绽放|涌动|碾压|主宰|骇人|威慑|征服|力压/;
 const NARRATIVE_NEGATE = /一扫而空|消[失散退]|恢[复]|愈[合]|治[愈疗]|好[转]|消除|不复存在|退[去却散]|挽救|挽回|痊愈|不再|消散|终结|退散|远去|远[离去]/;
 
 const clauseDirection = (text: string, keywordRegex: RegExp): 'down' | 'up' | null => {
@@ -554,19 +554,51 @@ ${recentHistory || '（游戏开始）'}
     const nextHistory = [...historyRef.current, `事件：${narrative.slice(0, 60)}… → 选择：${option.text}`];
     setHistory(nextHistory);
     setLoading(true);
-     fetchDeepseek([
-       { role: 'system', content: `你是轻小说作家。根据事件和玩家选择，生成一段80-120字的日式轻小说风格后果叙事。
-返回JSON：{"narrative":"叙事文本","milestone":"一句话总结（15-30字）"}` },
-       { role: 'user', content: `事件：${narrative.slice(0, 200)}
+    fetchDeepseek([
+      { role: 'system', content: `你是轻小说作家兼游戏引擎。根据事件和玩家选择，生成一段80-140字的日式轻小说后果叙事，并提供该叙事中体现的属性变化。
+
+★ 叙事规则：绝对不能复述或重写已有事件内容，必须写选择之后新发生的事情。
+★ effectsSummary：根据叙事中自然体到的属性变化迹象填写，格式"intelligence:+1, stamina:-2"。叙事中没提到的属性绝不出现。数值幅度±1~±3。
+★ 返回JSON：{"narrative":"叙事文本","milestone":"一句话总结（15-30字）","effectsSummary":"charm:+1"}` },
+      { role: 'user', content: `事件：${narrative.slice(0, 200)}
 选择：${option.text}
-生成该选择的直接叙事后果。` },
-     ], 10000).then(raw => {
-       const parsed = safeParseJsonFromModel(raw as string);
-       const text = typeof parsed?.narrative === 'string' ? parsed.narrative : '';
-       const ms = typeof parsed?.milestone === 'string' ? parsed.milestone : currentEvent?.milestone || '';
-       setLastNarrative(text.length >= 10 ? text : `选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
-       setLastMilestone(ms || currentEvent?.milestone || `选择了「${option.text}」`);
-     }).catch(() => {
+当前属性：智力=${statsRef.current.智力} 魅力=${statsRef.current.魅力} 体力=${statsRef.current.体力} 运气=${statsRef.current.运气}
+生成该选择的直接叙事后果及属性变化。` },
+    ], 10000).then(raw => {
+      const parsed = safeParseJsonFromModel(raw as string);
+      const text = typeof parsed?.narrative === 'string' ? parsed.narrative : '';
+      const ms = typeof parsed?.milestone === 'string' ? parsed.milestone : currentEvent?.milestone || '';
+      if (text.length >= 10) {
+        setLastNarrative(text);
+        setLastMilestone(ms || currentEvent?.milestone || `选择了「${option.text}」`);
+        if (typeof parsed?.effectsSummary === 'string') {
+          const consEffects = validateEffectsWithNarrative(text, parseEffectsSummary(parsed.effectsSummary));
+          if (Object.keys(consEffects).length > 0) {
+            const finalStats = { ...statsRef.current };
+            const extraChanges: Partial<Stats> = {};
+            Object.entries(consEffects).forEach(([k, v]) => {
+              const key = k as keyof Stats;
+              const orig = finalStats[key] ?? 0;
+              const prev2 = statsForPromptRef.current[key] ?? 0;
+              let nxt = orig + (v ?? 0);
+              if (miracleLockedRef.current.has(key) && nxt < prev2) nxt = prev2;
+              if (disasterLockedRef.current.has(key) && nxt > prev2) nxt = prev2;
+              finalStats[key] = nxt;
+              extraChanges[key] = (extraChanges[key] ?? 0) + (nxt - orig);
+            });
+            if (Object.keys(extraChanges).length > 0) {
+              onUpdateStats(finalStats);
+              const merged = { ...changes };
+              Object.entries(extraChanges).forEach(([k, v]) => { merged[k as keyof Stats] = (merged[k as keyof Stats] ?? 0) + v; });
+              setLastStatChanges(merged);
+            }
+          }
+        }
+      } else {
+        setLastNarrative(`选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
+        setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
+      }
+    }).catch(() => {
       setLastNarrative(`选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
       setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
     }).finally(() => {
