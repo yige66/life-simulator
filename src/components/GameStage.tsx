@@ -538,22 +538,6 @@ ${recentHistory || '（游戏开始）'}
 
   const handleOptionSelect = (option: GameOption) => {
     const narrative = currentEvent?.narrative || '';
-    const rawEffects = parseEffectsSummary(option.effectsSummary);
-    const resolved = validateEffectsWithNarrative(narrative, rawEffects);
-    const newStats = { ...statsRef.current };
-    const changes: Partial<Stats> = {};
-    Object.entries(resolved).forEach(([key, value]) => {
-      const k = key as keyof Stats;
-      const original = newStats[k] ?? 0;
-      const prev = statsForPromptRef.current[k] ?? 0;
-      let next = original + (value ?? 0);
-      if (miracleLockedRef.current.has(k) && next < prev) next = prev;
-      if (disasterLockedRef.current.has(k) && next > prev) next = prev;
-      newStats[k] = next;
-      changes[k] = (changes[k] ?? 0) + (next - original);
-    });
-    onUpdateStats(newStats);
-    setLastStatChanges(changes);
     const nextHistory = [...historyRef.current, `事件：${narrative.slice(0, 60)}… → 选择：${option.text}`];
     setHistory(nextHistory);
     setLoading(true);
@@ -570,6 +554,7 @@ ${recentHistory || '（游戏开始）'}
   - effectsSummary 格式：intelligence:+1, stamina:-2（英文属性名:符号数值，逗号分隔）。
   - 英文属性名只用：intelligence(智力) charm(魅力) stamina(体力) luck(运气)。
   - 数值幅度：±1~±3。
+  - 注：选项原本预设的效果为「${option.effectsSummary || '无'}」，可作为参考但以叙事为准。
 ★ 返回JSON：{"narrative":"叙事文本","milestone":"一句话总结（15-30字）","effectsSummary":"charm:+1"}` },
       { role: 'user', content: `事件：${narrative.slice(0, 200)}
 选择：${option.text}
@@ -582,36 +567,31 @@ ${recentHistory || '（游戏开始）'}
       if (text.length >= 10) {
         setLastNarrative(text);
         setLastMilestone(ms || currentEvent?.milestone || `选择了「${option.text}」`);
-        if (typeof parsed?.effectsSummary === 'string') {
-          const consEffects = validateEffectsWithNarrative(text, parseEffectsSummary(parsed.effectsSummary));
-          if (Object.keys(consEffects).length > 0) {
-            const finalStats = { ...statsRef.current };
-            const extraChanges: Partial<Stats> = {};
-            Object.entries(consEffects).forEach(([k, v]) => {
-              const key = k as keyof Stats;
-              const orig = finalStats[key] ?? 0;
-              const prev2 = statsForPromptRef.current[key] ?? 0;
-              let nxt = orig + (v ?? 0);
-              if (miracleLockedRef.current.has(key) && nxt < prev2) nxt = prev2;
-              if (disasterLockedRef.current.has(key) && nxt > prev2) nxt = prev2;
-              finalStats[key] = nxt;
-              extraChanges[key] = (extraChanges[key] ?? 0) + (nxt - orig);
-            });
-            if (Object.keys(extraChanges).length > 0) {
-              onUpdateStats(finalStats);
-              const merged = { ...changes };
-              Object.entries(extraChanges).forEach(([k, v]) => { merged[k as keyof Stats] = (merged[k as keyof Stats] ?? 0) + v; });
-              setLastStatChanges(merged);
-            }
-          }
-        }
+        const rawEff = typeof parsed?.effectsSummary === 'string' ? parsed.effectsSummary : '';
+        const consEffects = validateEffectsWithNarrative(text, parseEffectsSummary(rawEff));
+        const finalStats = { ...statsRef.current };
+        const allChanges: Partial<Stats> = {};
+        Object.entries(consEffects).forEach(([k, v]) => {
+          const key = k as keyof Stats;
+          const orig = finalStats[key] ?? 0;
+          const prev = statsForPromptRef.current[key] ?? 0;
+          let nxt = orig + (v ?? 0);
+          if (miracleLockedRef.current.has(key) && nxt < prev) nxt = prev;
+          if (disasterLockedRef.current.has(key) && nxt > prev) nxt = prev;
+          finalStats[key] = nxt;
+          allChanges[key] = (allChanges[key] ?? 0) + (nxt - orig);
+        });
+        onUpdateStats(finalStats);
+        setLastStatChanges(allChanges);
       } else {
         setLastNarrative(`选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
         setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
+        setLastStatChanges({});
       }
     }).catch(() => {
       setLastNarrative(`选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
       setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
+      setLastStatChanges({});
     }).finally(() => {
       setLoading(false);
       setShowConsequence(true);
