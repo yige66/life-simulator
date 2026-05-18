@@ -83,6 +83,26 @@ const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|
 const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐|挽回|痊愈|好转|消散|消失|恢复|愈合|消除|终结|消散|退散|加速|敬[畏佩]|求[教助]|追随|倾倒|称赞|赞赏|出奇|好[转了]|奇遇|治疗|救治/;
 const NARRATIVE_NEGATE = /一扫而空|消[失散退]|恢[复]|愈[合]|治[愈疗]|好[转]|消除|不复存在|退[去却散]|挽救|挽回|痊愈|不再|消散|终结|退散|远去|远[离去]/;
 
+const clauseDirection = (text: string, keywordRegex: RegExp): 'down' | 'up' | null => {
+   const isD = NARRATIVE_DOWN.test(text);
+   const isU = NARRATIVE_UP.test(text);
+   if (!isD && !isU) return null;
+   const neg = NARRATIVE_NEGATE.test(text);
+
+   if (isD && isU) {
+     if (neg) return 'up';
+     const dRe = new RegExp(NARRATIVE_DOWN.source, 'g');
+     const uRe = new RegExp(NARRATIVE_UP.source, 'g');
+     let m: RegExpExecArray | null, lastD = -1, lastU = -1;
+     while ((m = dRe.exec(text)) !== null) lastD = m.index;
+     while ((m = uRe.exec(text)) !== null) lastU = m.index;
+     return lastD > lastU ? 'down' : 'up';
+   }
+
+   if (isD) return neg ? 'up' : 'down';
+   return 'up';
+ };
+
 const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>): Partial<Stats> => {
   if (!narrative) return {};
   const validated: Partial<Stats> = {};
@@ -96,37 +116,12 @@ const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>
     const matching = clauses.filter(c => regex.test(c));
     if (matching.length === 0) continue;
 
-    const withDir = matching.find(c => NARRATIVE_DOWN.test(c) || NARRATIVE_UP.test(c));
-    if (!withDir) { validated[stat] = val; continue; }
-
-    const isDown = NARRATIVE_DOWN.test(withDir);
-    const isUp = NARRATIVE_UP.test(withDir);
-    const negated = NARRATIVE_NEGATE.test(withDir);
-
-    let dir: 'down' | 'up';
-   if (isDown && isUp) {
-     const re = new RegExp(regex.source, 'g');
-     let idx = 0, m1: RegExpExecArray | null;
-     while ((m1 = re.exec(withDir)) !== null) idx = m1.index;
-     const dRe = new RegExp(NARRATIVE_DOWN.source, 'g');
-     const uRe = new RegExp(NARRATIVE_UP.source, 'g');
-     let m2: RegExpExecArray | null, dDist = Infinity, uDist = Infinity;
-     dRe.lastIndex = 0; uRe.lastIndex = 0;
-     while ((m2 = dRe.exec(withDir)) !== null) {
-       const d = Math.abs(idx - m2.index);
-       if (d < dDist) dDist = d;
-     }
-     while ((m2 = uRe.exec(withDir)) !== null) {
-       const d = Math.abs(idx - m2.index);
-       if (d < uDist) uDist = d;
-     }
-     dir = dDist <= uDist ? 'down' : 'up';
-     if (negated) dir = dir === 'down' ? 'up' : 'down';
-   } else if (isDown) {
-      dir = negated ? 'up' : 'down';
-    } else {
-      dir = 'up';
+    let dir: 'down' | 'up' | null = null;
+    for (const c of matching) {
+      const d = clauseDirection(c, regex);
+      if (d) dir = d;
     }
+    if (!dir) { validated[stat] = val; continue; }
 
     const magnitude = Math.abs(val);
     validated[stat] = dir === 'down' ? -magnitude : magnitude;
