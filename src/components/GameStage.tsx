@@ -221,7 +221,6 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   2. narrative是纯粹的文学叙事，不包含任何数字、标签或属性名。用优美的日式轻小说笔法。
   3. 事件必须扎根于「世界观」与「角色身份背景」。
   4. 不能涉及政治话题/政治人物/政治隐喻。
-  5. 不能涉及色情/暴力/歧视，保持在PG-13。
   6. 选项必须与当前事件情境紧密相关，有2~4个。
 
 ★ effectsSummary 铁律：
