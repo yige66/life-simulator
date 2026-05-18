@@ -73,20 +73,20 @@ const parseEffectsSummary = (raw: string | undefined): Partial<Stats> => {
 };
 
 const NARRATIVE_STAT_KEYS: Record<keyof Stats, RegExp> = {
-  智力: /智[力慧]|推理|逻辑|记忆|思维|头脑|分析|思考|灵机|判断|洞察/,
-  魅力: /魅[力惑]|吸引|气质|风[采度]|人[缘脉]|口才|谈吐|亲和|交[谈流际]|迷人/,
-  体力: /体[力能]|力[气量]|身[体躯]|强壮|坚[韧固]|战斗|伤势|疲惫|虚[弱]|累倒|透支|体魄|体术|肌肉|硬扛|奔跑/,
-  运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外/,
+  智力: /智[力慧]|推理|逻辑|记忆|思维|头脑|分析|思考|灵机|判断|洞察|豁然开朗|新发现/,
+  魅力: /魅[力惑]|吸引|气质|风[采度]|人[缘脉]|口才|谈吐|亲和|交[谈流际]|迷人|称赞|赞赏|倾倒/,
+  体力: /体[力能]|力[气量]|身[体躯]|强壮|坚[韧固]|战斗|伤[痛势口]|受伤|重伤|疲惫|疲劳|虚[弱]|累倒|透支|体魄|体术|肌肉|硬扛|奔跑|挽回|困倦|精力|恐惧/,
+  运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外|厄运|奇遇|好运|坏运/,
 };
 
-const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|受伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌到|意外/;
-const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐/;
-const NARRATIVE_NEGATE = /一扫而空|消[失散退]|恢[复]|愈[合]|治[愈疗]|好[转]|消除|不复存在|退[去却]|挽救|挽回|痊愈/;
+const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|疲劳|受伤|重伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌[了下到]|意外|惨败|落败|不[足好]|困倦|误判|被误导|吃亏|被冷落|无视|变差/;
+const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐|挽回|痊愈|好转|消散|消失|恢复|愈合|消除|终结|消散|退散|加速|敬[畏佩]|求[教助]|追随|倾倒|称赞|赞赏|出奇|好[转了]/;
+const NARRATIVE_NEGATE = /一扫而空|消[失散退]|恢[复]|愈[合]|治[愈疗]|好[转]|消除|不复存在|退[去却散]|挽救|挽回|痊愈|不再|消散|终结|退散/;
 
 const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>): Partial<Stats> => {
   if (!narrative) return {};
   const validated: Partial<Stats> = {};
-  const clauses = narrative.split(/[，。；、但然而不过却可是只是而]/).filter(s => s.length > 0);
+  const clauses = narrative.split(/，|。|；|、|——|…|\.{3}|但|然而|不过|却|可是|只是/).filter(s => s.length > 0);
 
   for (const [key, regex] of Object.entries(NARRATIVE_STAT_KEYS)) {
     const stat = key as keyof Stats;
@@ -653,7 +653,7 @@ ${recentHistory || '（游戏开始）'}
                     </div>
                   )}
                   {lastMilestone && (
-                    <p className="text-xs sm:text-sm text-cyan-300/60 italic tracking-wider max-w-md mx-auto">
+                    <p className="text-xs sm:text-sm text-[#1a1a2e]/70 italic tracking-wider max-w-md mx-auto">
                       "{lastMilestone}"
                     </p>
                   )}
@@ -706,7 +706,7 @@ ${recentHistory || '（游戏开始）'}
               </div>
 
               {currentEvent.milestone && (
-                <p className="text-center text-xs sm:text-sm text-cyan-300/50 italic tracking-wider px-4">
+                <p className="text-center text-xs sm:text-sm text-[#1a1a2e]/60 italic tracking-wider px-4">
                   — {currentEvent.milestone}
                 </p>
               )}
