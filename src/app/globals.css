@@ -64,6 +64,46 @@ body {
     animation: golden-glow 3s ease-in-out infinite alternate;
   }
 
+  /* Miracle Frame - Gold + Red */
+  .miracle-frame {
+    @apply relative p-8 glass-panel overflow-visible;
+    border: 3px solid #d4af37;
+    background: 
+      radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.12) 0%, transparent 70%),
+      linear-gradient(135deg, #2a1a10 0%, #4a0f0f 30%, #3d1f00 100%);
+    color: #fce4c8;
+    box-shadow: 
+      0 20px 60px rgba(212, 175, 55, 0.35),
+      0 0 80px rgba(220, 80, 40, 0.15),
+      inset 0 0 50px rgba(255, 200, 60, 0.05);
+    animation: miracle-glow 2.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes miracle-glow {
+    from { box-shadow: 0 20px 60px rgba(212, 175, 55, 0.35), 0 0 80px rgba(220, 80, 40, 0.15); }
+    to { box-shadow: 0 25px 80px rgba(212, 175, 55, 0.5), 0 0 120px rgba(255, 80, 40, 0.25); }
+  }
+
+  /* Disaster Frame - Black + Red */
+  .disaster-frame {
+    @apply relative p-8 glass-panel overflow-visible;
+    border: 3px solid #991111;
+    background: 
+      radial-gradient(circle at 50% 50%, rgba(139, 0, 0, 0.15) 0%, transparent 70%),
+      linear-gradient(135deg, #0a0a0a 0%, #1a0a0a 30%, #300000 100%);
+    color: #e0cccc;
+    box-shadow: 
+      0 20px 60px rgba(139, 0, 0, 0.4),
+      0 0 80px rgba(180, 20, 20, 0.2),
+      inset 0 0 50px rgba(139, 0, 0, 0.08);
+    animation: disaster-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes disaster-glow {
+    from { box-shadow: 0 20px 60px rgba(139, 0, 0, 0.4), 0 0 80px rgba(180, 20, 20, 0.2); }
+    to { box-shadow: 0 30px 80px rgba(180, 0, 0, 0.55), 0 0 120px rgba(255, 30, 30, 0.3); }
+  }
+
   .ornament-bg {
     @apply absolute inset-0 pointer-events-none opacity-[0.12] z-0;
     background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd' stroke='%2316213e' stroke-width='0.6' stroke-opacity='0.6'%3E%3Cpath d='M60 60c10-20 30-20 40 0M60 60c-10-20-30-20-40 0M60 60c20 10 20 30 0 40M60 60c20-10 20-30 0-40'/%3E%3Ccircle cx='60' cy='60' r='5'/%3E%3Cpath d='M0 0c10 20 30 20 40 0M120 0c-10 20-30 20-40 0M0 120c10-20 30-20 40 0M120 120c-10-20-30-20-40 0'/%3E%3Cpath d='M30 30a15 15 0 1 0 30 0 15 15 0 1 0-30 0M90 30a15 15 0 1 0 30 0 15 15 0 1 0-30 0M30 90a15 15 0 1 0 30 0 15 15 0 1 0-30 0M90 90a15 15 0 1 0 30 0 15 15 0 1 0-30 0'/%3E%3C/g%3E%3C/svg%3E");
