@@ -136,6 +136,26 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
     audioRef.current = audio;
   };
 
+  const toggleBGM = () => {
+    const next = !musicOn;
+    setMusicOn(next);
+    if (!next && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (next) {
+      const audio = new Audio(BGM_SRC[mood]);
+      audio.loop = true;
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
+      audioRef.current = audio;
+    }
+  };
+
+  useEffect(() => {
+    return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } };
+  }, []);
+
   const safeParseJsonFromModel = (raw: unknown) => {
     if (typeof raw !== 'string') return null;
     try { return JSON.parse(raw); } catch {
@@ -481,7 +501,7 @@ ${recentHistory || '（游戏开始）'}
   return (
     <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 lg:pr-28 relative">
       <div className="fixed top-3 left-3 z-40 flex items-center gap-2">
-        <button onClick={() => setMusicOn(!musicOn)}
+        <button onClick={toggleBGM}
           className={`px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
             musicOn ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'bg-[#3d1f14]/90 border-amber-900/30 text-[#f4e4bc]/60'
           }`}>
