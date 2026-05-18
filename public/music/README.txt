@@ -1,7 +1,13 @@
-﻿将以下三首 BGM 命名后放入此目录：
+将以下三首 BGM 下载后重命名放入此目录：
 
-calm.mp3        《星降る街》（钢琴+弦乐，温暖治愈）
-mysterious.mp3  《古の記憶》（竖琴+弦乐，空灵怀旧）
-emotional.mp3   《静かな夜の物語》（钢琴+弦乐，安静深情）
+1. calm.wav (First Light Particles / 第一缕光粒子)
+   下载：https://opengameart.org/sites/default/files/first_light_particles_0.wav
+   风格：CC0 钢琴氛围曲，安静治愈带宇宙感，适合日常叙事
 
-代码已就绪，放入音频文件后 BGM 功能即可使用。
+2. mysterious.mp3 (Memories / 記憶)
+   下载：https://dova-s.jp/en/bgm/detail/6922/download（点击绿色 DOWNLOAD FILE 按钮）
+   风格：空灵怀旧竖琴曲，淡淡忧伤，适合神秘事件/命运转折
+
+3. emotional.mp3 (Quiet Night / 静夜)
+   下载：https://dova-s.jp/en/bgm/detail/13958/download（点击绿色 DOWNLOAD FILE 按钮）
+   风格：安静深情日式RPG夜晚城镇风，适合命运转折/重大抉择
