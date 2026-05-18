@@ -217,7 +217,7 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
 
     const baseRules = `
 ★ 核心规则：
-  1. narrative(叙事)必须与玩家刚才的选择或自定义输入强相关，必须围绕该选择展开其直接后果。
+  1. narrative(叙事)必须与玩家刚才的选择或自定义输入强相关，必须围绕该选择展开其直接后果。但叙事必须是新的故事发展，绝不能与近期事件历史中的内容重复或只是换一种说法复述同一件事。
   2. narrative是纯粹的文学叙事，不包含任何数字、标签或属性名。用优美的日式轻小说笔法。
   3. 事件必须扎根于「世界观」与「角色身份背景」。
   4. 不能涉及政治话题/政治人物/政治隐喻。
