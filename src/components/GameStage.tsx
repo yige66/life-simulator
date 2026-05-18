@@ -254,14 +254,14 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   2. 确认当前事件类型（普通/特殊/命运转折）。
   3. 确认当前阶段标题和已发生的事件数量。
 
-★ 核心规则：
+★ 核心规则 铁律，必须遵守：
   1. narrative必须严格围绕玩家刚才的选择展开，不得凭空生成新故事方向，不得重复前文已发生的事件内容。如果玩家选了A，故事沿A的后果写；如果玩家自定义输入了行动，故事必须围绕这个行动展开。
   2. narrative是纯粹的文学叙事，不包含任何数字、标签或属性名。用优美的日式轻小说笔法。
   3. 事件必须扎根于「世界观」与「角色身份背景」。
   4. 不能涉及政治话题/政治人物/政治隐喻。
   5. 选项必须与当前事件情境紧密相关，有2~4个。
 
-★ 时间跨度与阶段内连续性：
+★ 时间跨度与阶段内连续性 铁律，必须遵守：
   - 每次生成新事件时，应在叙事中体现时间推进（如"第二天清晨""三天后""一周后的黄昏"）。
   - 同一阶段内的多个事件必须保持叙事连续性，上一个事件的结尾应自然衔接下一个事件的开头。阶段内时间跨度可以很小（同一天、数小时）。
   - 叙事中应体现当前事件与阶段内前序事件的因果关联（如"因为你三天前救了那名旅人，今天他带着谢礼找到了你"）。
@@ -533,7 +533,7 @@ ${recentHistory || '（游戏开始）'}
     } finally { setLoading(false); }
   };
 
-  const handleOptionSelect = (option: GameOption) => {
+  const handleOptionSelect = async (option: GameOption) => {
     const narrative = currentEvent?.narrative || '';
     const rawEffects = parseEffectsSummary(option.effectsSummary);
     const resolved = validateEffectsWithNarrative(narrative, rawEffects);
@@ -551,11 +551,39 @@ ${recentHistory || '（游戏开始）'}
     });
     onUpdateStats(newStats);
     setLastStatChanges(changes);
-    setLastNarrative(narrative);
-    setLastMilestone(currentEvent?.milestone || '');
-    const nextHistory = [...historyRef.current, `叙事：${narrative} → 选择：${option.text}`];
+    const nextHistory = [...historyRef.current, `事件：${narrative.slice(0, 60)}… → 选择：${option.text}`];
     setHistory(nextHistory);
-    setShowConsequence(true);
+    setLoading(true);
+    try {
+      const raw = await fetchDeepseek([
+        { role: 'system', content: `你是日式轻小说风格游戏引擎。
+
+当前事件内容：${narrative}
+玩家刚才选择了：${option.text}
+
+请生成该选择带来的直接后果叙事，100-180字，日式轻小说笔法。
+
+★ 铁律：
+- 这是选择「${option.text}」带来的直接后果叙事，是新的故事发展，绝不能复述或重写当前事件的内容。
+- narrative 不包含任何数字、标签、属性名。
+- 从选择造成的即时后果开始写起。` },
+        { role: 'user', content: `生成玩家选择「${option.text}」之后的直接叙事后果。` },
+      ]);
+      const parsed = safeParseJsonFromModel(raw);
+      if (parsed && typeof parsed.narrative === 'string') {
+        setLastNarrative(parsed.narrative);
+        setLastMilestone(parsed.milestone || currentEvent?.milestone || '');
+      } else {
+        setLastNarrative(`你选择了「${option.text}」，世界的齿轮悄然转动……`);
+        setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
+      }
+    } catch {
+      setLastNarrative(`你选择了「${option.text}」，世界的齿轮悄然转动……`);
+      setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
+    } finally {
+      setLoading(false);
+      setShowConsequence(true);
+    }
   };
 
   const handleDismissConsequence = () => {
