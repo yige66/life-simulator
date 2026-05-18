@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, Star } from 'lucide-react';
+import { Sparkles, RefreshCw, Star, Music, Music2 } from 'lucide-react';
 import CharacterCreation from '@/components/CharacterCreation';
 import MagicCircleStats from '@/components/MagicCircleStats';
 import GameStage from '@/components/GameStage';
@@ -37,6 +37,28 @@ export default function HomePage() {
   const [evaluation, setEvaluation] = useState('');
   const [loadingEnding, setLoadingEnding] = useState(false);
   const [finalStats, setFinalStats] = useState<Stats | null>(null);
+  const [titleMusicOn, setTitleMusicOn] = useState(false);
+  const titleAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => { if (titleAudioRef.current) { titleAudioRef.current.pause(); titleAudioRef.current = null; } };
+  }, []);
+
+  const toggleTitleBGM = () => {
+    const next = !titleMusicOn;
+    setTitleMusicOn(next);
+    if (!next && titleAudioRef.current) {
+      titleAudioRef.current.pause();
+      titleAudioRef.current = null;
+    }
+    if (next) {
+      const audio = new Audio('/music/calm.wav');
+      audio.loop = true;
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
+      titleAudioRef.current = audio;
+    }
+  };
 
   const handleStartGame = (name: string, background: string, worldview: string, stats: Stats) => {
     setCharacter({ name, background, worldview, stats });
@@ -44,6 +66,8 @@ export default function HomePage() {
   };
 
   const handleConfirmOverview = () => {
+    if (titleAudioRef.current) { titleAudioRef.current.pause(); titleAudioRef.current = null; }
+    setTitleMusicOn(false);
     setGameState('playing');
   };
 
@@ -116,6 +140,12 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <button onClick={toggleTitleBGM}
+        className={`fixed top-3 left-3 z-40 px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
+          titleMusicOn ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'bg-[#3d1f14]/90 border-amber-900/30 text-[#f4e4bc]/60'
+        }`}>
+        {titleMusicOn ? <Music2 className="w-3.5 h-3.5" /> : <Music className="w-3.5 h-3.5" />}
+      </button>
       <AnimatePresence mode="wait">
         {gameState === 'creation' && (
           <motion.div
