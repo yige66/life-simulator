@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, Eye, Star, Music, Music2 } from 'lucide-react';
+import { Send, Sparkles, X, Eye, Star } from 'lucide-react';
 
 import MagicCircleStats from './MagicCircleStats';
 
@@ -56,12 +56,6 @@ const EFFECTS_EN_TO_CN: Record<string, keyof Stats> = {
 
 const SPECIAL_CHANCE = 0.01;
 
-const MUSIC_SRC: Record<string, string> = {
-  calm: '/music/calm.mp3',
-  mysterious: '/music/mysterious.mp3',
-  emotional: '/music/emotional.mp3',
-};
-
 const parseEffectsSummary = (raw: string | undefined): Partial<Stats> => {
   if (!raw || typeof raw !== 'string') return {};
   const result: Partial<Stats> = {};
@@ -78,6 +72,28 @@ const parseEffectsSummary = (raw: string | undefined): Partial<Stats> => {
   return result;
 };
 
+const NARRATIVE_STAT_KEYS: Record<keyof Stats, RegExp> = {
+  智力: /智[力慧]|推理|逻辑|记忆|思维|头脑|分析|思考|灵机|判断|洞察/,
+  魅力: /魅[力惑]|吸引|气质|风[采度]|人[缘脉]|口才|谈吐|亲和|交[谈流际]|迷人/,
+  体力: /体[力能]|力[气量]|身[体躯]|强壮|坚[韧固]|战斗|伤势|疲惫|虚[弱]|累倒|透支|体魄|体术|肌肉|硬扛|奔跑/,
+  运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外/,
+};
+
+const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>): Partial<Stats> => {
+  if (!narrative) return effects;
+  const validated: Partial<Stats> = {};
+  for (const [key, regex] of Object.entries(NARRATIVE_STAT_KEYS)) {
+    const stat = key as keyof Stats;
+    const val = effects[stat];
+    if (val === undefined) continue;
+    if (regex.test(narrative)) {
+      validated[stat] = val;
+    }
+  }
+  if (Object.keys(validated).length === 0) return effects;
+  return validated;
+};
+
 export default function GameStage({ character, onUpdateStats, onGameEnd }: Props) {
   const [chapters, setChapters] = useState<string[]>([]);
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
@@ -92,56 +108,13 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const [lastMilestone, setLastMilestone] = useState('');
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [isSpecialEvent, setIsSpecialEvent] = useState(false);
-  const [mood, setMood] = useState<'calm' | 'mysterious' | 'emotional'>('calm');
-  const [musicOn, setMusicOn] = useState(false);
   const statsRef = useRef(character.stats);
   const historyRef = useRef<string[]>([]);
   const chapterEndRef = useRef(false);
   const fateEventsRef = useRef<string[]>([]);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => { statsRef.current = character.stats; }, [character.stats]);
   useEffect(() => { historyRef.current = history; }, [history]);
-
-  const switchMusic = useCallback((m: 'calm' | 'mysterious' | 'emotional') => {
-    setMood(m);
-    if (!musicOn) return;
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    const src = MUSIC_SRC[m];
-    const audio = new Audio(src);
-    audio.loop = true;
-    audio.volume = 0.35;
-    audio.play().catch(() => {});
-    audioRef.current = audio;
-  }, [musicOn]);
-
-  useEffect(() => {
-    if (musicOn) {
-      const src = MUSIC_SRC[mood];
-      const audio = new Audio(src);
-      audio.loop = true;
-      audio.volume = 0.35;
-      audio.play().catch(() => {});
-      audioRef.current = audio;
-    }
-    return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } };
-  }, [musicOn]);
-
-  useEffect(() => {
-    if (musicOn && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      const src = MUSIC_SRC[mood];
-      const audio = new Audio(src);
-      audio.loop = true;
-      audio.volume = 0.35;
-      audio.play().catch(() => {});
-      audioRef.current = audio;
-    }
-  }, [mood]);
 
   const safeParseJsonFromModel = (raw: unknown) => {
     if (typeof raw !== 'string') return null;
@@ -373,7 +346,8 @@ ${recentHistory || '（游戏开始）'}
         setIsSpecialEvent(false);
       } else {
         if (userAction && nextEvent.effectsSummary) {
-          const resolved = parseEffectsSummary(nextEvent.effectsSummary);
+          const rawEffects = parseEffectsSummary(nextEvent.effectsSummary);
+          const resolved = validateEffectsWithNarrative(nextEvent.narrative, rawEffects);
           const newStats = { ...statsForPrompt };
           const changes: Partial<Stats> = {};
           Object.entries(resolved).forEach(([key, value]) => {
@@ -401,7 +375,6 @@ ${recentHistory || '（游戏开始）'}
           ];
         }
         setCurrentEvent(nextEvent);
-        if (nextEvent.mood) switchMusic(nextEvent.mood);
       }
       chapterEndRef.current = nextEvent?.chapterEnd === true;
       if (isSpecial && nextEvent) {
@@ -427,7 +400,9 @@ ${recentHistory || '（游戏开始）'}
   };
 
   const handleOptionSelect = (option: GameOption) => {
-    const resolved = parseEffectsSummary(option.effectsSummary);
+    const narrative = currentEvent?.narrative || '';
+    const rawEffects = parseEffectsSummary(option.effectsSummary);
+    const resolved = validateEffectsWithNarrative(narrative, rawEffects);
     const newStats = { ...statsRef.current };
     const changes: Partial<Stats> = {};
     Object.entries(resolved).forEach(([key, value]) => {
@@ -437,9 +412,9 @@ ${recentHistory || '（游戏开始）'}
     });
     onUpdateStats(newStats);
     setLastStatChanges(changes);
-    setLastNarrative(currentEvent?.narrative || '');
+    setLastNarrative(narrative);
     setLastMilestone(currentEvent?.milestone || '');
-    const nextHistory = [...historyRef.current, `叙事：${currentEvent?.narrative} → 选择：${option.text}`];
+    const nextHistory = [...historyRef.current, `叙事：${narrative} → 选择：${option.text}`];
     setHistory(nextHistory);
     setShowConsequence(true);
   };
@@ -484,21 +459,12 @@ ${recentHistory || '（游戏开始）'}
 
   return (
     <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 relative">
-      <div className="fixed top-3 right-3 z-40 flex items-center gap-2">
-        <button onClick={() => setMusicOn(!musicOn)}
-          className={`px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-2 transition-all ${
-            musicOn ? 'bg-amber-900/80 border-amber-500/40 text-amber-300' : 'bg-[#3d1f14]/90 border-amber-900/30 text-[#f4e4bc]/60'
-          }`}>
-          {musicOn ? <Music2 className="w-3.5 h-3.5" /> : <Music className="w-3.5 h-3.5" />}
-          BGM
-        </button>
-        <button onClick={() => setShowStatsModal(true)}
-          className="lg:hidden px-3 py-2 rounded-xl bg-[#3d1f14]/90 border border-amber-900/30 text-[#f4e4bc] text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-2">
-          <Eye className="w-3.5 h-3.5" />能力值
-        </button>
-      </div>
+      <button onClick={() => setShowStatsModal(true)}
+        className="lg:hidden fixed top-3 left-3 z-40 px-3 py-2 rounded-xl bg-[#3d1f14]/90 border border-amber-900/30 text-[#f4e4bc] text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-2">
+        <Eye className="w-3.5 h-3.5" />能力值
+      </button>
 
-      <div className="hidden lg:block fixed top-6 right-6 z-50 pointer-events-auto scale-[0.65] origin-top-right hover:scale-100 transition-all duration-500">
+      <div className="hidden lg:block fixed top-20 right-4 z-30 pointer-events-auto scale-[0.6] origin-top-right hover:scale-100 transition-all duration-500">
         <div className="relative classical-frame p-4 shadow-[0_18px_45px_rgba(0,0,0,0.55)]">
           <div className="ornament-bg" />
           <div className="relative z-10">
@@ -544,7 +510,7 @@ ${recentHistory || '（游戏开始）'}
       </AnimatePresence>
 
       {!showConsequence && (
-      <div className="w-full mb-6 sm:mb-8 md:mb-12 pr-0 lg:pr-24">
+      <div className="w-full mb-6 sm:mb-8 md:mb-12">
         <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-6">
           <motion.div key={chapters[currentChapterIndex]} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
             className="relative px-6 sm:px-8 md:px-12 py-3 sm:py-4 group">
