@@ -127,7 +127,10 @@ const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>
     validated[stat] = dir === 'down' ? -magnitude : magnitude;
   }
 
-  if (Object.keys(validated).length === 0) return {};
+  if (Object.keys(validated).length === 0) {
+    for (const [k, v] of Object.entries(effects)) { if (v !== undefined) validated[k as keyof Stats] = v; }
+    return validated;
+  }
   return validated;
 };
 
