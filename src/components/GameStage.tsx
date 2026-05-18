@@ -79,18 +79,31 @@ const NARRATIVE_STAT_KEYS: Record<keyof Stats, RegExp> = {
   运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外/,
 };
 
+const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|受伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌到|意外/;
+const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐/;
+
 const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>): Partial<Stats> => {
-  if (!narrative) return effects;
+  if (!narrative) return {};
   const validated: Partial<Stats> = {};
+  const clauses = narrative.split(/[，。；、但然而不过却可是只是而]/).filter(s => s.length > 0);
+
   for (const [key, regex] of Object.entries(NARRATIVE_STAT_KEYS)) {
     const stat = key as keyof Stats;
     const val = effects[stat];
     if (val === undefined) continue;
-    if (regex.test(narrative)) {
-      validated[stat] = val;
-    }
+
+    const matching = clauses.filter(c => regex.test(c));
+    if (matching.length === 0) continue;
+
+    const withDir = matching.find(c => NARRATIVE_DOWN.test(c) || NARRATIVE_UP.test(c));
+    if (!withDir) { validated[stat] = val; continue; }
+
+    const dir = NARRATIVE_DOWN.test(withDir) ? 'down' : 'up';
+    const magnitude = Math.abs(val);
+    validated[stat] = dir === 'down' ? -magnitude : magnitude;
   }
-  if (Object.keys(validated).length === 0) return effects;
+
+  if (Object.keys(validated).length === 0) return {};
   return validated;
 };
 
@@ -212,8 +225,9 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   6. 选项必须与当前事件情境紧密相关，有2~4个。
 
 ★ effectsSummary 铁律：
-  - 叙事中明确提到的属性变化，必须在 effectsSummary 中精确总结。
-  - 叙事中未提到的属性，effectsSummary 中绝不可出现。
+  - 叙事中明确提到的属性变化，必须在 effectsSummary 中**精确总结**。
+  - **符号必须与叙事一致**：叙事说"体力减弱/受伤/疲惫"→ effectsSummary 该属性必须是负数（如 stamina:-2）；叙事说"智力提升/觉醒/分析成功"→ 必须是正数（如 intelligence:+2）。绝不允许叙事说下降但 effectsSummary 给正值、或叙事说上升但给负值。
+  - 叙事中**未提到**的属性，effectsSummary 中**绝不可出现**。
   - effectsSummary 格式：intelligence:+1, stamina:-2（英文属性名:符号数值，逗号分隔）。
   - 英文属性名只能用：intelligence(智力) charm(魅力) stamina(体力) luck(运气)。
   - 数值幅度：${scaleHint}
