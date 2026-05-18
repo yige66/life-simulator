@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, Eye, Star } from 'lucide-react';
+import { Send, Sparkles, X, Eye, Star, Music, Music2 } from 'lucide-react';
 
 import MagicCircleStats from './MagicCircleStats';
 
@@ -108,13 +108,27 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const [lastMilestone, setLastMilestone] = useState('');
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [isSpecialEvent, setIsSpecialEvent] = useState(false);
+  const [mood, setMood] = useState<'calm' | 'mysterious' | 'emotional'>('calm');
+  const [musicOn, setMusicOn] = useState(false);
   const statsRef = useRef(character.stats);
   const historyRef = useRef<string[]>([]);
   const chapterEndRef = useRef(false);
   const fateEventsRef = useRef<string[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => { statsRef.current = character.stats; }, [character.stats]);
   useEffect(() => { historyRef.current = history; }, [history]);
+
+  const switchMusic = (m: 'calm' | 'mysterious' | 'emotional') => {
+    setMood(m);
+    if (!musicOn) return;
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    const audio = new Audio(`/music/${m}.mp3`);
+    audio.loop = true;
+    audio.volume = 0.3;
+    audio.play().catch(() => {});
+    audioRef.current = audio;
+  };
 
   const safeParseJsonFromModel = (raw: unknown) => {
     if (typeof raw !== 'string') return null;
@@ -375,6 +389,7 @@ ${recentHistory || '（游戏开始）'}
           ];
         }
         setCurrentEvent(nextEvent);
+        if (nextEvent.mood) switchMusic(nextEvent.mood);
       }
       chapterEndRef.current = nextEvent?.chapterEnd === true;
       if (isSpecial && nextEvent) {
@@ -459,10 +474,18 @@ ${recentHistory || '（游戏开始）'}
 
   return (
     <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 relative">
-      <button onClick={() => setShowStatsModal(true)}
-        className="lg:hidden fixed top-3 left-3 z-40 px-3 py-2 rounded-xl bg-[#3d1f14]/90 border border-amber-900/30 text-[#f4e4bc] text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-2">
-        <Eye className="w-3.5 h-3.5" />能力值
-      </button>
+      <div className="fixed top-3 left-3 z-40 flex items-center gap-2">
+        <button onClick={() => setMusicOn(!musicOn)}
+          className={`px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
+            musicOn ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'bg-[#3d1f14]/90 border-amber-900/30 text-[#f4e4bc]/60'
+          }`}>
+          {musicOn ? <Music2 className="w-3.5 h-3.5" /> : <Music className="w-3.5 h-3.5" />}
+        </button>
+        <button onClick={() => setShowStatsModal(true)}
+          className="lg:hidden px-3 py-2 rounded-xl bg-[#3d1f14]/90 border border-amber-900/30 text-[#f4e4bc] text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-2">
+          <Eye className="w-3.5 h-3.5" />能力值
+        </button>
+      </div>
 
       <div className="hidden lg:block fixed top-20 right-4 z-30 pointer-events-auto scale-[0.6] origin-top-right hover:scale-100 transition-all duration-500">
         <div className="relative classical-frame p-4 shadow-[0_18px_45px_rgba(0,0,0,0.55)]">
