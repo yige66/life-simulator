@@ -73,15 +73,15 @@ const parseEffectsSummary = (raw: string | undefined): Partial<Stats> => {
 };
 
 const NARRATIVE_STAT_KEYS: Record<keyof Stats, RegExp> = {
-  智力: /智[力慧]|推理|逻辑|记忆|思维|头脑|分析|思考|灵机|判断|洞察|豁然开朗|新发现/,
+  智力: /智[力慧]|推理|逻辑|记忆|思维|头脑|分析|思考|灵机|灵光|判断|洞察|豁然开朗|新发现|真谛/,
   魅力: /魅[力惑]|吸引|气质|风[采度]|人[缘脉]|口才|谈吐|亲和|交[谈流际]|迷人|称赞|赞赏|倾倒/,
-  体力: /体[力能]|力[气量]|身[体躯]|强壮|坚[韧固]|战斗|伤[痛势口]|受伤|重伤|疲惫|疲劳|虚[弱]|累倒|透支|体魄|体术|肌肉|硬扛|奔跑|挽回|困倦|精力|恐惧/,
+  体力: /体[力能]|力[气量]|身[体躯]|强壮|坚[韧固]|战斗|伤[痛势口]|受伤|重伤|疲惫|疲劳|虚[弱]|累倒|透支|体魄|体术|肌肉|硬扛|奔跑|挽回|困倦|精力|恐惧|噩梦|苦果|代价|隐[隐痛]/,
   运气: /运[气势]|幸[运好]|巧合|偶然|机缘|命运|奇迹|天选|倒霉|不幸|意外|厄运|奇遇|好运|坏运/,
 };
 
-const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|疲劳|受伤|重伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌[了下到]|意外|惨败|落败|不[足好]|困倦|误判|被误导|吃亏|被冷落|无视|变差/;
-const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐|挽回|痊愈|好转|消散|消失|恢复|愈合|消除|终结|消散|退散|加速|敬[畏佩]|求[教助]|追随|倾倒|称赞|赞赏|出奇|好[转了]/;
-const NARRATIVE_NEGATE = /一扫而空|消[失散退]|恢[复]|愈[合]|治[愈疗]|好[转]|消除|不复存在|退[去却散]|挽救|挽回|痊愈|不再|消散|终结|退散/;
+const NARRATIVE_DOWN = /下降|减弱|减少|降低|流失|削弱|损耗|衰退|恶化|变弱|疲惫|疲劳|受伤|重伤|失败|倒霉|不幸|虚弱|透支|模糊|轻视|疏远|嘲笑|消耗|耗尽|下跌|下滑|跌[了下到]|意外|惨败|落败|不[足好]|困倦|误判|被误导|吃亏|被冷落|无视|变差|打击|内疚/;
+const NARRATIVE_UP   = /上升|增强|增加|提升|增长|强化|恢复|进步|飞跃|高涨|变强|觉醒|成功|获得|领悟|吸引|奇迹|天选|机缘|亲和|口才|谈吐|挽回|痊愈|好转|消散|消失|恢复|愈合|消除|终结|消散|退散|加速|敬[畏佩]|求[教助]|追随|倾倒|称赞|赞赏|出奇|好[转了]|奇遇|治疗|救治/;
+const NARRATIVE_NEGATE = /一扫而空|消[失散退]|恢[复]|愈[合]|治[愈疗]|好[转]|消除|不复存在|退[去却散]|挽救|挽回|痊愈|不再|消散|终结|退散|远去|远[离去]/;
 
 const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>): Partial<Stats> => {
   if (!narrative) return {};
@@ -104,9 +104,25 @@ const validateEffectsWithNarrative = (narrative: string, effects: Partial<Stats>
     const negated = NARRATIVE_NEGATE.test(withDir);
 
     let dir: 'down' | 'up';
-    if (isDown && isUp) {
-      dir = negated ? 'up' : 'down';
-    } else if (isDown) {
+   if (isDown && isUp) {
+     const re = new RegExp(regex.source, 'g');
+     let idx = 0, m1: RegExpExecArray | null;
+     while ((m1 = re.exec(withDir)) !== null) idx = m1.index;
+     const dRe = new RegExp(NARRATIVE_DOWN.source, 'g');
+     const uRe = new RegExp(NARRATIVE_UP.source, 'g');
+     let m2: RegExpExecArray | null, dDist = Infinity, uDist = Infinity;
+     dRe.lastIndex = 0; uRe.lastIndex = 0;
+     while ((m2 = dRe.exec(withDir)) !== null) {
+       const d = Math.abs(idx - m2.index);
+       if (d < dDist) dDist = d;
+     }
+     while ((m2 = uRe.exec(withDir)) !== null) {
+       const d = Math.abs(idx - m2.index);
+       if (d < uDist) uDist = d;
+     }
+     dir = dDist <= uDist ? 'down' : 'up';
+     if (negated) dir = dir === 'down' ? 'up' : 'down';
+   } else if (isDown) {
       dir = negated ? 'up' : 'down';
     } else {
       dir = 'up';
@@ -539,7 +555,7 @@ ${recentHistory || '（游戏开始）'}
     : 'classical-frame min-h-[180px] sm:min-h-[220px] md:min-h-[280px] flex items-center justify-center p-6 sm:p-8 md:p-12 text-center relative group';
 
   return (
-    <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 relative">
+    <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 lg:px-8 lg:pr-32 relative">
       <div className="fixed top-3 left-3 z-40 flex items-center gap-2">
         <button onClick={toggleBGM}
           className={`px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
