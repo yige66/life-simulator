@@ -554,9 +554,9 @@ ${recentHistory || '（游戏开始）'}
     const nextHistory = [...historyRef.current, `事件：${narrative.slice(0, 60)}… → 选择：${option.text}`];
     setHistory(nextHistory);
     setLoading(true);
-    try {
-      const raw = await fetchDeepseek([
-        { role: 'system', content: `你是日式轻小说风格游戏引擎。
+     try {
+       const raw = await fetchDeepseek([
+          { role: 'system', content: `你是日式轻小说风格游戏引擎。
 
 当前事件内容：${narrative}
 玩家刚才选择了：${option.text}
@@ -565,15 +565,16 @@ ${recentHistory || '（游戏开始）'}
 
 ★ 铁律：
 - 这是选择「${option.text}」带来的直接后果叙事，是新的故事发展，绝不能复述或重写当前事件的内容。
-- narrative 不包含任何数字、标签、属性名。
-- 从选择造成的即时后果开始写起。` },
-        { role: 'user', content: `生成玩家选择「${option.text}」之后的直接叙事后果。` },
-      ]);
-      const parsed = safeParseJsonFromModel(raw);
-      if (parsed && typeof parsed.narrative === 'string') {
-        setLastNarrative(parsed.narrative);
-        setLastMilestone(parsed.milestone || currentEvent?.milestone || '');
-      } else {
+- 不包含任何数字、标签、属性名。
+- 从选择造成的即时后果开始写起。
+- 只返回叙事文本本身，不要任何前缀、后缀、引号或JSON。` },
+          { role: 'user', content: `生成玩家选择「${option.text}」之后的直接叙事后果。` },
+        ]);
+        const result = (raw as string)?.trim();
+       if (result && result.length >= 20) {
+         setLastNarrative(result);
+         setLastMilestone(currentEvent?.milestone || '');
+       } else {
         setLastNarrative(`你选择了「${option.text}」，世界的齿轮悄然转动……`);
         setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
       }
