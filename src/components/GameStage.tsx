@@ -558,7 +558,15 @@ ${recentHistory || '（游戏开始）'}
       { role: 'system', content: `你是轻小说作家兼游戏引擎。根据事件和玩家选择，生成一段80-140字的日式轻小说后果叙事，并提供该叙事中体现的属性变化。
 
 ★ 叙事规则：绝对不能复述或重写已有事件内容，必须写选择之后新发生的事情。
-★ effectsSummary：根据叙事中自然体到的属性变化迹象填写，格式"intelligence:+1, stamina:-2"。叙事中没提到的属性绝不出现。数值幅度±1~±3。
+
+★ effectsSummary 铁律：
+  - narrative中必须自然地描述与属性变化相关的迹象（如"你感到体力不支""你的勇气在增长"）。
+  - 叙事中明确提到的属性变化迹象，必须在 effectsSummary 中精确总结。
+  - **符号必须与叙事一致**：叙事说"体力减弱/受伤/疲惫"→ effectsSummary 该属性必须是负数（如 stamina:-2）；叙事说"智力提升/觉醒/分析成功"→ 必须是正数（如 intelligence:+2）。
+  - 叙事中**未提到**的属性，effectsSummary 中**绝不可出现**。
+  - effectsSummary 格式：intelligence:+1, stamina:-2（英文属性名:符号数值，逗号分隔）。
+  - 英文属性名只用：intelligence(智力) charm(魅力) stamina(体力) luck(运气)。
+  - 数值幅度：±1~±3。
 ★ 返回JSON：{"narrative":"叙事文本","milestone":"一句话总结（15-30字）","effectsSummary":"charm:+1"}` },
       { role: 'user', content: `事件：${narrative.slice(0, 200)}
 选择：${option.text}
