@@ -278,6 +278,7 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   - 叙事中明确提到的属性变化迹象，必须在 effectsSummary 中精确总结。
   - **符号必须与叙事一致**：叙事说"体力减弱/受伤/疲惫"→ effectsSummary 该属性必须是负数（如 stamina:-2）；叙事说"智力提升/觉醒/分析成功"→ 必须是正数（如 intelligence:+2）。
   - 叙事中**未提到**的属性，effectsSummary 中**绝不可出现**。
+  - 若叙事中只明显体现了一项属性变化迹象，effectsSummary 只包含该属性，不强行添加第二项。
   - effectsSummary 格式：intelligence:+1, stamina:-2（英文属性名:符号数值，逗号分隔）。
   - 英文属性名只用：intelligence(智力) charm(魅力) stamina(体力) luck(运气)。
   - 数值幅度：${scaleHint}
@@ -551,6 +552,7 @@ ${recentHistory || '（游戏开始）'}
   - 叙事中明确提到的属性变化迹象，必须在 effectsSummary 中精确总结。
   - **符号必须与叙事一致**：叙事说"体力减弱/受伤/疲惫"→ effectsSummary 该属性必须是负数（如 stamina:-2）；叙事说"智力提升/觉醒/分析成功"→ 必须是正数（如 intelligence:+2）。
   - 叙事中**未提到**的属性，effectsSummary 中**绝不可出现**。
+  - 若叙事中只明显体现了一项属性变化迹象，effectsSummary 只包含该属性，不强行添加第二项。
   - effectsSummary 格式：intelligence:+1, stamina:-2（英文属性名:符号数值，逗号分隔）。
   - 英文属性名只用：intelligence(智力) charm(魅力) stamina(体力) luck(运气)。
   - 数值幅度：±1~±3。
