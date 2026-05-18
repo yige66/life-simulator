@@ -550,7 +550,7 @@ ${recentHistory || '（游戏开始）'}
     : 'classical-frame min-h-[180px] sm:min-h-[220px] md:min-h-[280px] flex items-center justify-center p-6 sm:p-8 md:p-12 text-center relative group';
 
   return (
-    <div className="w-full max-w-6xl min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 lg:px-8 lg:pr-32 relative">
+    <div className="w-full max-w-6xl mx-auto min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 lg:px-12 relative">
       <div className="fixed top-3 left-3 z-40 flex items-center gap-2">
         <button onClick={toggleBGM}
           className={`px-3 py-2 rounded-xl border text-xs font-black tracking-wider shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all ${
@@ -564,7 +564,7 @@ ${recentHistory || '（游戏开始）'}
         </button>
       </div>
 
-      <div className="hidden lg:block fixed top-6 right-6 z-50 pointer-events-auto scale-[0.6] origin-top-right hover:scale-100 transition-all duration-300">
+      <div className="hidden lg:block fixed top-6 right-4 z-50 pointer-events-auto scale-[0.55] origin-top-right hover:scale-100 transition-all duration-300">
         <div className="relative classical-frame p-4 shadow-[0_18px_45px_rgba(0,0,0,0.55)]">
           <div className="ornament-bg" />
           <div className="relative z-10">
