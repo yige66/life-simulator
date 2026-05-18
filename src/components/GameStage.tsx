@@ -144,7 +144,9 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const [lastStatChanges, setLastStatChanges] = useState<Partial<Stats>>({});
   const [lastMilestone, setLastMilestone] = useState('');
   const [showStatsModal, setShowStatsModal] = useState(false);
-  const [isSpecialEvent, setIsSpecialEvent] = useState(false);
+  const [eventType, setEventType] = useState<'normal' | 'special' | 'miracle' | 'disaster'>('normal');
+
+  const isSpecialUI = eventType === 'special' || eventType === 'miracle' || eventType === 'disaster';
   const [mood, setMood] = useState<'calm' | 'mysterious' | 'emotional'>('calm');
   const [musicOn, setMusicOn] = useState(false);
   const statsRef = useRef(character.stats);
@@ -224,8 +226,11 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
     return '属性在正常范围，效果幅度±1~±3。';
   };
 
-  const getSystemPrompt = (hasUserAction: boolean, isSpecial: boolean, stats: Stats) => {
-    const typeLabel = isSpecial ? '★命运转折事件★' : '普通事件';
+  const getSystemPrompt = (hasUserAction: boolean, isSpecial: boolean, isMiracle: boolean, isDisaster: boolean, miracleStat: string | null, disasterStat: string | null, stats: Stats) => {
+    const typeLabel = isMiracle ? `★神迹降临·${miracleStat}★`
+      : isDisaster ? `★深渊灾厄·${disasterStat}★`
+      : isSpecial ? '★命运转折事件★'
+      : '普通事件';
     const scaleHint = getStatScaleHint(stats);
 
     const currentStatsDesc = `当前属性：智力=${stats.智力}（${stats.智力>=10?'高':stats.智力<=0?'低':'中'}），魅力=${stats.魅力}（${stats.魅力>=10?'高':stats.魅力<=0?'低':'中'}），体力=${stats.体力}（${stats.体力>=10?'高':stats.体力<=0?'低':'中'}），运气=${stats.运气}（${stats.运气>=10?'高':stats.运气<=0?'低':'中'}）。`;
@@ -284,11 +289,19 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   - 可能涉及神祇、时空裂缝、禁忌魔法觉醒、远古传说降临等。
   - effectsSummary 幅度 ±8~±25，属性将发生剧烈变化。` : '';
 
+    const fatePromptHint = isSpecial ? '★命运转折点★：极为罕见！离奇夸张特别！effect幅度±8~±25。'
+      : (isMiracle || isDisaster) ? `普通事件（但${isMiracle ? `${miracleStat}高达` : `${disasterStat}暴跌至`}${isMiracle ? stats[miracleStat as keyof Stats] : stats[disasterStat as keyof Stats]}，叙事中必须因这离谱的数值产生令人难以置信的结果）\n  注意：这是普通事件，effectsSummary幅度正常±1~±3。`
+      : '普通事件：日常冒险节奏。effect幅度±1~±3。';
+
+    const fatePromptHintShort = isSpecial ? '★命运转折点★：极为罕见！离奇夸张特别。effect幅度±8~±25，属性剧烈变化。'
+      : (isMiracle || isDisaster) ? `普通事件（但${isMiracle ? `${miracleStat}高达` : `${disasterStat}暴跌至`}${isMiracle ? stats[miracleStat as keyof Stats] : stats[disasterStat as keyof Stats]}，叙事中必须因这离谱的数值产生令人难以置信的结果）\n  注意：这是普通事件，effectsSummary幅度正常±1~±3。`
+      : '普通事件：日常冒险节奏。effect幅度±1~±3。';
+
     if (hasUserAction) {
       return `你是日式轻小说风格游戏引擎。玩家的自定义动作已发生，你必须根据这个动作生成世界的回应。
 
 当前事件：${typeLabel}
-${isSpecial ? '★命运转折点★：极为罕见！离奇夸张特别！effect幅度±8~±25。' : '普通事件：日常冒险节奏。effect幅度±1~±3。'}
+${fatePromptHint}
 ${currentStatsDesc}
 ${statRules}
 ${specialRules}
@@ -317,7 +330,7 @@ ${baseRules}
     return `你是日式轻小说风格游戏引擎。每个章节代表人生一个阶段，阶段内事件时间连续，跨阶段可跳过数月甚至数年。
 
 当前事件：${typeLabel}
-${isSpecial ? '★命运转折点★：极为罕见！离奇夸张特别！effect幅度±8~±25，属性剧烈变化。' : '普通事件：日常冒险节奏。effect幅度±1~±3。'}
+${fatePromptHintShort}
 ${currentStatsDesc}
 ${statRules}
 ${specialRules}
@@ -385,11 +398,24 @@ ${baseRules}
       const historyForPrompt = context?.history ?? historyRef.current;
       const recentHistory = historyForPrompt.slice(-8).join('\n');
       const userAction = context?.userAction;
-      const isSpecial = Math.random() < SPECIAL_CHANCE;
-      setIsSpecialEvent(isSpecial);
+      const highestStat = Math.max(statsForPrompt.智力, statsForPrompt.魅力, statsForPrompt.体力, statsForPrompt.运气);
+      const lowestStat = Math.min(statsForPrompt.智力, statsForPrompt.魅力, statsForPrompt.体力, statsForPrompt.运气);
+      const isMiracle = highestStat >= 80;
+      const isDisaster = lowestStat <= -80;
+      const miracleStat = isMiracle
+        ? Object.entries(statsForPrompt).find(([, v]) => v === highestStat)?.[0] ?? null
+        : null;
+      const disasterStat = isDisaster
+        ? Object.entries(statsForPrompt).find(([, v]) => v === lowestStat)?.[0] ?? null
+        : null;
+      const isSpecial = !isMiracle && !isDisaster && Math.random() < SPECIAL_CHANCE;
+      if (isMiracle) setEventType('miracle');
+      else if (isDisaster) setEventType('disaster');
+      else if (isSpecial) setEventType('special');
+      else setEventType('normal');
 
       const raw = await fetchDeepseek([
-        { role: 'system', content: getSystemPrompt(!!userAction, isSpecial, statsForPrompt) },
+        { role: 'system', content: getSystemPrompt(!!userAction, isSpecial, isMiracle, isDisaster, miracleStat as keyof Stats | null, disasterStat as keyof Stats | null, statsForPrompt) },
         {
           role: 'user',
           content: userAction
@@ -434,7 +460,7 @@ ${recentHistory || '（游戏开始）'}
             { choice: 'C', text: '默念咒文', effectsSummary: 'intelligence:+1' },
           ],
         });
-        setIsSpecialEvent(false);
+        setEventType('normal');
       } else {
         if (userAction && nextEvent.effectsSummary) {
           const rawEffects = parseEffectsSummary(nextEvent.effectsSummary);
@@ -469,7 +495,7 @@ ${recentHistory || '（游戏开始）'}
         if (nextEvent.mood) switchMusic(nextEvent.mood);
       }
       chapterEndRef.current = nextEvent?.chapterEnd === true;
-      if (isSpecial && nextEvent) {
+      if ((isSpecial || isMiracle || isDisaster) && nextEvent) {
         fateEventsRef.current = [...fateEventsRef.current, nextEvent.milestone || nextEvent.narrative.slice(0, 50)];
       }
       if (userAction) setShowConsequence(true);
@@ -486,7 +512,7 @@ ${recentHistory || '（游戏开始）'}
           { choice: 'C', text: '强行突破', effectsSummary: 'stamina:+1' },
         ],
       });
-      setIsSpecialEvent(false);
+      setEventType('normal');
       setShowConsequence(false);
     } finally { setLoading(false); }
   };
@@ -541,13 +567,72 @@ ${recentHistory || '（游戏开始）'}
     }
   };
 
+  const isMiracle = eventType === 'miracle';
+  const isDisaster = eventType === 'disaster';
+  const isSpecial = eventType === 'special';
+  const hasCorners = !isSpecialUI;
+
   const hasStatChanges = Object.keys(lastStatChanges).length > 0;
   const statChangesList = Object.entries(lastStatChanges).filter(([, v]) => v !== 0)
     .map(([k, v]) => ({ label: STAT_LABELS[k as keyof Stats], value: v as number }));
 
-  const eventFrameClass = isSpecialEvent
-    ? 'special-event-frame min-h-[180px] sm:min-h-[220px] md:min-h-[280px] flex items-center justify-center p-6 sm:p-8 md:p-12 text-center relative group'
-    : 'classical-frame min-h-[180px] sm:min-h-[220px] md:min-h-[280px] flex items-center justify-center p-6 sm:p-8 md:p-12 text-center relative group';
+  const eventFrameClass = (isMiracle ? 'miracle-frame' : isDisaster ? 'disaster-frame' : isSpecial ? 'special-event-frame' : 'classical-frame')
+    + ' min-h-[180px] sm:min-h-[220px] md:min-h-[280px] flex items-center justify-center p-6 sm:p-8 md:p-12 text-center relative group';
+
+  const barColors = isMiracle ? 'bg-yellow-300/15 border-yellow-400/40'
+    : isDisaster ? 'bg-red-700/15 border-red-600/40'
+    : isSpecial ? 'bg-amber-500/15 border-amber-400/40'
+    : 'bg-cyan-500/10 border-cyan-500/30';
+  const barText = isMiracle ? 'text-yellow-200'
+    : isDisaster ? 'text-red-200'
+    : isSpecial ? 'text-amber-200 text-glow-gold'
+    : 'text-cyan-100 text-glow-sakura';
+  const barIcon = isSpecialUI ? Star : Sparkles;
+  const barIconColor = isMiracle ? 'text-yellow-300'
+    : isDisaster ? 'text-red-400'
+    : isSpecial ? 'text-amber-300'
+    : 'text-cyan-300';
+  const consequenceFrame = isMiracle ? 'miracle-frame' : isDisaster ? 'disaster-frame' : isSpecial ? 'special-event-frame' : 'classical-frame';
+  const consequenceIcon = isSpecialUI ? Star : Sparkles;
+  const narrativeText = isMiracle ? 'text-yellow-50' : isDisaster ? 'text-red-100' : isSpecial ? 'text-amber-50' : 'text-white';
+  const consequenceLabel = isMiracle ? '★ 神迹降临 ★' : isDisaster ? '★ 深渊灾厄 ★' : isSpecial ? '★ 命运转折 ★' : '命运的回响';
+  const consequenceLabelColor = isMiracle ? 'text-yellow-300/80' : isDisaster ? 'text-red-400/80' : isSpecial ? 'text-amber-300/80' : 'text-cyan-300/80';
+  const consequenceIconColor = isMiracle ? 'text-yellow-400' : isDisaster ? 'text-red-500' : isSpecial ? 'text-amber-400' : 'text-cyan-400';
+  const dismissButtonClass = isMiracle ? 'golden-button' : isDisaster ? 'bg-red-900/60 border border-red-700/40 text-red-200 hover:bg-red-800/60' : isSpecial ? 'golden-button' : 'aurora-button';
+  const dismissButtonText = isMiracle ? '见证神迹' : isDisaster ? '承受灾厄' : isSpecial ? '握住命运的丝线' : '继续前行';
+  const optionButtonClass = isMiracle ? 'golden-button' : isDisaster ? 'bg-red-900/40 border border-red-700/30 text-red-200 hover:bg-red-800/50' : isSpecial ? 'golden-button' : 'aurora-button';
+  const optionIconClass = isMiracle
+    ? 'bg-yellow-400/20 border-yellow-400/20 text-yellow-300 group-hover:bg-yellow-400 group-hover:text-yellow-950'
+    : isDisaster
+    ? 'bg-red-600/20 border-red-500/20 text-red-300 group-hover:bg-red-500 group-hover:text-red-100'
+    : isSpecial
+    ? 'bg-amber-500/20 border-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-amber-950'
+    : 'bg-white/5 border-white/5 text-cyan-300 group-hover:bg-aurora-green group-hover:text-night';
+  const optionTextHover = isMiracle ? 'group-hover:text-yellow-200' : isDisaster ? 'group-hover:text-red-200' : isSpecial ? 'group-hover:text-amber-200' : 'group-hover:text-glow-aurora';
+  const scenarioLogColor = isMiracle ? 'text-yellow-300/50'
+    : isDisaster ? 'text-red-400/50'
+    : isSpecial ? 'text-amber-300/50'
+    : 'text-cyan-300/80';
+  const scenarioLogBar = isMiracle ? 'bg-yellow-400/40'
+    : isDisaster ? 'bg-red-600/40'
+    : isSpecial ? 'bg-amber-400/40'
+    : 'bg-cyan-500/30';
+  const eventTag = isMiracle ? 'bg-yellow-800/80 border-yellow-500/40 text-yellow-300/60'
+    : isDisaster ? 'bg-red-950/80 border-red-700/40 text-red-300/60'
+    : isSpecial ? 'bg-amber-900/80 border-amber-500/40 text-amber-300/60'
+    : 'bg-night border-cyan-500/30 text-cyan-300/80';
+  const floatingBadge = isMiracle
+    ? 'bg-gradient-to-r from-yellow-400 to-amber-300 border-2 border-yellow-200/50 shadow-[0_0_30px_rgba(251,191,36,0.5)]'
+    : isDisaster
+    ? 'bg-gradient-to-r from-red-900 to-red-700 border-2 border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.5)]'
+    : '';
+  const floatingBadgeText = isMiracle ? 'text-amber-950'
+    : isDisaster ? 'text-red-200'
+    : '';
+  const floatingBadgeIconColor = isMiracle ? 'fill-amber-950' : isDisaster ? 'fill-red-200' : '';
+  const floatingBadgeLabel = isMiracle ? '神迹降临'
+    : isDisaster ? '深渊灾厄'
+    : '命运转折';
 
   return (
     <div className="w-full max-w-6xl mx-auto min-h-[80vh] flex flex-col items-center justify-start pt-6 pb-12 px-3 sm:px-4 md:px-6 lg:px-12 relative">
@@ -614,13 +699,13 @@ ${recentHistory || '（游戏开始）'}
         <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-6">
           <motion.div key={chapters[currentChapterIndex]} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
             className="relative px-6 sm:px-8 md:px-12 py-3 sm:py-4 group">
-            <div className={`absolute inset-0 border-y ${isSpecialEvent ? 'bg-amber-500/15 border-amber-400/40' : 'bg-cyan-500/10 border-cyan-500/30'} skew-x-[-20deg] group-hover:bg-cyan-500/20 transition-colors`} />
+            <div className={`absolute inset-0 border-y ${barColors} skew-x-[-20deg] transition-colors`} />
             <div className="relative flex items-center gap-2 sm:gap-4 md:gap-6">
-              {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-cyan-300 animate-pulse" />}
-              <span className={`text-lg sm:text-xl md:text-3xl font-black tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] uppercase text-center leading-tight ${isSpecialEvent ? 'text-amber-200 text-glow-gold' : 'text-cyan-100 text-glow-sakura'}`}>
+              {React.createElement(barIcon, { className: `w-4 h-4 sm:w-5 sm:h-5 ${barIconColor} animate-pulse` })}
+              <span className={`text-lg sm:text-xl md:text-3xl font-black tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] uppercase text-center leading-tight ${barText}`}>
                 {chapters[currentChapterIndex] || '连接异世界中...'}
               </span>
-              {isSpecialEvent ? <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse" /> : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-cyan-300 animate-pulse" />}
+              {React.createElement(barIcon, { className: `w-4 h-4 sm:w-5 sm:h-5 ${barIconColor} animate-pulse` })}
             </div>
           </motion.div>
           <div className="flex gap-2">
@@ -637,18 +722,18 @@ ${recentHistory || '（游戏开始）'}
           {showConsequence ? (
             <motion.div key="consequence" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }}
               className="flex flex-col items-center justify-center py-12 sm:py-16 md:py-20">
-              <div className={(isSpecialEvent ? 'special-event-frame' : 'classical-frame') + ' p-8 sm:p-10 md:p-14 text-center relative'}>
-                {!isSpecialEvent && <><div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" /><div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" /></>}
+              <div className={consequenceFrame + ' p-8 sm:p-10 md:p-14 text-center relative'}>
+                {hasCorners && <><div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" /><div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" /></>}
                 <div className="ornament-bg" />
                 <div className="relative z-10 space-y-6 sm:space-y-8">
                   <div className="flex items-center justify-center gap-2 sm:gap-3">
-                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
-                    <span className={`text-sm sm:text-base font-black uppercase tracking-[0.3em] ${isSpecialEvent ? 'text-amber-300/80' : 'text-cyan-300/80'}`}>
-                      {isSpecialEvent ? '★ 命运转折 ★' : '命运的回响'}
+                    {React.createElement(consequenceIcon, { className: `w-6 h-6 sm:w-7 sm:h-7 ${consequenceIconColor}` })}
+                    <span className={`text-sm sm:text-base font-black uppercase tracking-[0.3em] ${consequenceLabelColor}`}>
+                      {consequenceLabel}
                     </span>
-                    {isSpecialEvent ? <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" /> : <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
+                    {React.createElement(consequenceIcon, { className: `w-6 h-6 sm:w-7 sm:h-7 ${consequenceIconColor}` })}
                   </div>
-                  <p className={`text-xl sm:text-2xl md:text-3xl leading-relaxed font-bold max-w-xl ${isSpecialEvent ? 'text-amber-50' : 'text-white'}`}>
+                  <p className={`text-xl sm:text-2xl md:text-3xl leading-relaxed font-bold max-w-xl ${narrativeText}`}>
                     {lastNarrative}
                   </p>
                   {hasStatChanges && (
@@ -669,8 +754,8 @@ ${recentHistory || '（游戏开始）'}
                     </p>
                   )}
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleDismissConsequence}
-                    className={`!px-10 !py-4 mx-auto text-base sm:text-lg ${isSpecialEvent ? 'golden-button' : 'aurora-button'}`}>
-                    {isSpecialEvent ? '握住命运的丝线' : '继续前行'}
+                    className={`!px-10 !py-4 mx-auto text-base sm:text-lg ${dismissButtonClass}`}>
+                    {dismissButtonText}
                   </motion.button>
                 </div>
               </div>
@@ -695,23 +780,30 @@ ${recentHistory || '（游戏开始）'}
           ) : currentEvent ? (
             <motion.div key="event" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 md:space-y-10">
               <div className={eventFrameClass}>
-                {!isSpecialEvent && <><div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" /><div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" /></>}
-                {isSpecialEvent && (
+                {hasCorners && <><div className="frame-corner frame-corner-tl" /><div className="frame-corner frame-corner-tr" /><div className="frame-corner frame-corner-bl" /><div className="frame-corner frame-corner-br" /></>}
+                {(isMiracle || isDisaster) && (
+                  <div className={`absolute -top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-1.5 rounded-full ${floatingBadge}`}>
+                    <span className={`text-xs font-black tracking-[0.3em] uppercase flex items-center gap-1.5 ${floatingBadgeText}`}>
+                      <Star className={`w-3 h-3 ${floatingBadgeIconColor}`} />{floatingBadgeLabel}<Star className={`w-3 h-3 ${floatingBadgeIconColor}`} />
+                    </span>
+                  </div>
+                )}
+                {isSpecial && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-1.5 bg-gradient-to-r from-amber-600 to-yellow-500 rounded-full border-2 border-amber-300/50 shadow-[0_0_30px_rgba(251,191,36,0.4)]">
                     <span className="text-xs font-black text-amber-950 tracking-[0.3em] uppercase flex items-center gap-1.5">
                       <Star className="w-3 h-3 fill-amber-950" />命运转折<Star className="w-3 h-3 fill-amber-950" />
                     </span>
                   </div>
                 )}
-                <div className={`absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 ${isSpecialEvent ? 'mt-4' : ''}`}>
-                  <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-cyan-500/30'}`} />
-                  <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] ${isSpecialEvent ? 'text-amber-300/50' : 'text-cyan-300/80'}`}>Scenario Log</span>
-                  <div className={`h-px w-6 sm:w-8 ${isSpecialEvent ? 'bg-amber-400/40' : 'bg-cyan-500/30'}`} />
+                <div className={`absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 ${isSpecialUI ? 'mt-4' : ''}`}>
+                  <div className={`h-px w-6 sm:w-8 ${scenarioLogBar}`} />
+                  <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] ${scenarioLogColor}`}>Scenario Log</span>
+                  <div className={`h-px w-6 sm:w-8 ${scenarioLogBar}`} />
                 </div>
-                <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl leading-relaxed font-bold px-2 sm:px-4 ${isSpecialEvent ? 'text-amber-50' : 'text-white'}`}>
+                <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl leading-relaxed font-bold px-2 sm:px-4 ${narrativeText}`}>
                   {currentEvent.narrative}
                 </p>
-                <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 sm:px-6 py-1 border rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-black ${isSpecialEvent ? 'bg-amber-900/80 border-amber-500/40 text-amber-300/60' : 'bg-night border-cyan-500/30 text-cyan-300/80'}`}>
+                <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 sm:px-6 py-1 border rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-black ${eventTag}`}>
                   Event {eventCount + 1}
                 </div>
               </div>
@@ -728,11 +820,11 @@ ${recentHistory || '（游戏开始）'}
                     const choiceLabel = opt.choice || String.fromCharCode(65 + idx);
                     return (
                       <motion.button key={idx} whileHover={{ scale: 1.02, x: 3 }} whileTap={{ scale: 0.98 }} onClick={() => handleOptionSelect(opt)}
-                        className={`!justify-start group text-left p-4 sm:p-5 md:p-6 min-h-[70px] sm:min-h-[80px] ${isSpecialEvent ? 'golden-button' : 'aurora-button'}`}>
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs sm:text-sm font-black transition-all duration-300 border shrink-0 ${isSpecialEvent ? 'bg-amber-500/20 border-amber-400/20 text-amber-300 group-hover:bg-amber-400 group-hover:text-amber-950' : 'bg-white/5 border-white/5 text-cyan-300 group-hover:bg-aurora-green group-hover:text-night'}`}>
+                        className={`!justify-start group text-left p-4 sm:p-5 md:p-6 min-h-[70px] sm:min-h-[80px] ${optionButtonClass}`}>
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs sm:text-sm font-black transition-all duration-300 border shrink-0 ${optionIconClass}`}>
                           {choiceLabel}
                         </div>
-                        <span className={`flex-1 text-sm sm:text-base md:text-lg transition-all ml-2 sm:ml-3 ${isSpecialEvent ? 'group-hover:text-amber-200' : 'group-hover:text-glow-aurora'}`}>{opt.text}</span>
+                        <span className={`flex-1 text-sm sm:text-base md:text-lg transition-all ml-2 sm:ml-3 ${optionTextHover}`}>{opt.text}</span>
                       </motion.button>
                     );
                   })}
