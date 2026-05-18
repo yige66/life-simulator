@@ -551,12 +551,28 @@ ${recentHistory || '（游戏开始）'}
     });
     onUpdateStats(newStats);
     setLastStatChanges(changes);
-    const consequence = `选择了「${option.text}」。${currentEvent?.milestone ? `—— ${currentEvent.milestone}` : ''}`;
-    setLastNarrative(consequence);
-    setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
     const nextHistory = [...historyRef.current, `事件：${narrative.slice(0, 60)}… → 选择：${option.text}`];
     setHistory(nextHistory);
-    setShowConsequence(true);
+    setLoading(true);
+     fetchDeepseek([
+       { role: 'system', content: `你是轻小说作家。根据事件和玩家选择，生成一段80-120字的日式轻小说风格后果叙事。
+返回JSON：{"narrative":"叙事文本","milestone":"一句话总结（15-30字）"}` },
+       { role: 'user', content: `事件：${narrative.slice(0, 200)}
+选择：${option.text}
+生成该选择的直接叙事后果。` },
+     ], 10000).then(raw => {
+       const parsed = safeParseJsonFromModel(raw as string);
+       const text = typeof parsed?.narrative === 'string' ? parsed.narrative : '';
+       const ms = typeof parsed?.milestone === 'string' ? parsed.milestone : currentEvent?.milestone || '';
+       setLastNarrative(text.length >= 10 ? text : `选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
+       setLastMilestone(ms || currentEvent?.milestone || `选择了「${option.text}」`);
+     }).catch(() => {
+      setLastNarrative(`选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
+      setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
+    }).finally(() => {
+      setLoading(false);
+      setShowConsequence(true);
+    });
   };
 
   const handleDismissConsequence = () => {
