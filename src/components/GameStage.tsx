@@ -438,8 +438,9 @@ ${baseRules}
       else setEventType('normal');
       statsForPromptRef.current = { ...statsForPrompt };
 
-      const statSimilarForGen = getSimilarExamples(statsForPrompt, chapterTitle, 2);
-      const fewShotBlockForGen = formatFewShotPrompt(statSimilarForGen);
+      const fewShotBlockForGen = (isSpecial || isMiracle || isDisaster)
+        ? ''
+        : formatFewShotPrompt(getSimilarExamples(statsForPrompt, chapterTitle, 2));
 
       const raw = await fetchDeepseek([
         { role: 'system', content: fewShotBlockForGen + getSystemPrompt(!!userAction, isSpecial, isMiracle, isDisaster, miracleStat as keyof Stats | null, disasterStat as keyof Stats | null, statsForPrompt) },
@@ -566,7 +567,7 @@ ${recentHistory || '（游戏开始）'}
     setHistory(nextHistory);
     setLoading(true);
     fetchDeepseek([
-      { role: 'system', content: formatFewShotPrompt(getSimilarExamples(statsRef.current, narrative, 2)) + `你是轻小说作家兼游戏引擎。根据事件和玩家选择，生成一段80-140字的日式轻小说后果叙事，并提供该叙事中体现的属性变化。
+      { role: 'system', content: `你是轻小说作家兼游戏引擎。根据事件和玩家选择，生成一段80-140字的日式轻小说后果叙事，并提供该叙事中体现的属性变化。
 
 ★ 叙事规则：绝对不能复述或重写已有事件内容，必须写选择之后新发生的事情。
 
