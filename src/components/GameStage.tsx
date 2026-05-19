@@ -438,7 +438,13 @@ ${baseRules}
       else setEventType('normal');
       statsForPromptRef.current = { ...statsForPrompt };
 
-      const fewShotBlockForGen = (isSpecial || isMiracle || isDisaster)
+      const absMax = Math.max(
+        Math.abs(statsForPrompt.智力), Math.abs(statsForPrompt.魅力),
+        Math.abs(statsForPrompt.体力), Math.abs(statsForPrompt.运气),
+      );
+      const isStatBeyondTrainingRange = absMax >= 10;
+
+      const fewShotBlockForGen = (isSpecial || isMiracle || isDisaster || isStatBeyondTrainingRange || !!userAction)
         ? ''
         : formatFewShotPrompt(getSimilarExamples(statsForPrompt, chapterTitle, 2));
 
