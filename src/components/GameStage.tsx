@@ -2,9 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, Eye, Star, Music, Music2 } from 'lucide-react';
+import { Send, Sparkles, X, Eye, Star, Music, Music2, ThumbsUp, ThumbsDown } from 'lucide-react';
 
 import MagicCircleStats from './MagicCircleStats';
+import {
+  addTrainingExample,
+  rateExample,
+  getSimilarExamples,
+  formatFewShotPrompt,
+} from '@/lib/trainingStore';
 
 interface Stats {
   智力: number;
@@ -157,6 +163,7 @@ export default function GameStage({ character, onUpdateStats, onGameEnd }: Props
   const miracleLockedRef = useRef<Set<keyof Stats>>(new Set());
   const disasterLockedRef = useRef<Set<keyof Stats>>(new Set());
   const statsForPromptRef = useRef<Stats>(character.stats);
+  const lastTrainingIdRef = useRef<string | null>(null);
 
   useEffect(() => { statsRef.current = character.stats; }, [character.stats]);
   useEffect(() => { historyRef.current = history; }, [history]);
@@ -431,8 +438,11 @@ ${baseRules}
       else setEventType('normal');
       statsForPromptRef.current = { ...statsForPrompt };
 
+      const statSimilarForGen = getSimilarExamples(statsForPrompt, chapterTitle, 2);
+      const fewShotBlockForGen = formatFewShotPrompt(statSimilarForGen);
+
       const raw = await fetchDeepseek([
-        { role: 'system', content: getSystemPrompt(!!userAction, isSpecial, isMiracle, isDisaster, miracleStat as keyof Stats | null, disasterStat as keyof Stats | null, statsForPrompt) },
+        { role: 'system', content: fewShotBlockForGen + getSystemPrompt(!!userAction, isSpecial, isMiracle, isDisaster, miracleStat as keyof Stats | null, disasterStat as keyof Stats | null, statsForPrompt) },
         {
           role: 'user',
           content: userAction
@@ -515,6 +525,17 @@ ${recentHistory || '（游戏开始）'}
         }
         setCurrentEvent(nextEvent);
         if (nextEvent.mood) switchMusic(nextEvent.mood);
+        if (nextEvent.narrative && nextEvent.effectsSummary) {
+          const tid = addTrainingExample(
+            chapterTitle,
+            userAction ? `玩家自定义：${userAction}` : '事件生成',
+            statsForPrompt,
+            nextEvent.narrative,
+            nextEvent.effectsSummary,
+            userAction,
+          ).id;
+          if (userAction) lastTrainingIdRef.current = tid;
+        }
       }
       chapterEndRef.current = nextEvent?.chapterEnd === true;
       if ((isSpecial || isMiracle || isDisaster) && nextEvent) {
@@ -545,7 +566,7 @@ ${recentHistory || '（游戏开始）'}
     setHistory(nextHistory);
     setLoading(true);
     fetchDeepseek([
-      { role: 'system', content: `你是轻小说作家兼游戏引擎。根据事件和玩家选择，生成一段80-140字的日式轻小说后果叙事，并提供该叙事中体现的属性变化。
+      { role: 'system', content: formatFewShotPrompt(getSimilarExamples(statsRef.current, narrative, 2)) + `你是轻小说作家兼游戏引擎。根据事件和玩家选择，生成一段80-140字的日式轻小说后果叙事，并提供该叙事中体现的属性变化。
 
 ★ 叙事规则：绝对不能复述或重写已有事件内容，必须写选择之后新发生的事情。
 
@@ -588,6 +609,14 @@ ${recentHistory || '（游戏开始）'}
         });
         onUpdateStats(finalStats);
         setLastStatChanges(allChanges);
+        const tid = addTrainingExample(
+          narrative,
+          option.text,
+          statsRef.current,
+          text,
+          rawEff,
+        ).id;
+        lastTrainingIdRef.current = tid;
       } else {
         setLastNarrative(`选择了「${option.text}」。—— ${currentEvent?.milestone || '命运之轮悄然转动'}`);
         setLastMilestone(currentEvent?.milestone || `选择了「${option.text}」`);
@@ -818,6 +847,21 @@ ${recentHistory || '（游戏开始）'}
                     <p className="text-xs sm:text-sm text-[#1a1a2e]/70 italic tracking-wider max-w-md mx-auto">
                       "{lastMilestone}"
                     </p>
+                  )}
+                  {lastTrainingIdRef.current && (
+                    <div className="flex items-center justify-center gap-4 pt-1">
+                      <span className="text-[10px] text-[#1a1a2e]/40 font-black uppercase tracking-widest">评价 AI</span>
+                      <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+                        onClick={() => { rateExample(lastTrainingIdRef.current!, 2); lastTrainingIdRef.current = null; }}
+                        className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center hover:bg-emerald-500/20 transition-all">
+                        <ThumbsUp className="w-3.5 h-3.5 text-emerald-300" />
+                      </motion.button>
+                      <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+                        onClick={() => { rateExample(lastTrainingIdRef.current!, 1); lastTrainingIdRef.current = null; }}
+                        className="w-8 h-8 rounded-full bg-red-500/10 border border-red-400/30 flex items-center justify-center hover:bg-red-500/20 transition-all">
+                        <ThumbsDown className="w-3.5 h-3.5 text-red-300" />
+                      </motion.button>
+                    </div>
                   )}
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleDismissConsequence}
                     className={`!px-10 !py-4 mx-auto text-base sm:text-lg ${dismissButtonClass}`}>
